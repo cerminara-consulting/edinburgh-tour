@@ -1,489 +1,309 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
-  <title>Edinburgh Old Town — One-Day Walking Tour</title>
-  <meta name="description" content="A guided one-day walking tour of Edinburgh's Old Town. Nine stops from Edinburgh Castle to Armchair Books, timed, rated, and bookable." />
-  <link rel="stylesheet" href="./styles.css" />
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Edinburgh — Two Walking Loops</title>
+<meta name="description" content="A two-day walking itinerary for Edinburgh: Old Town castle-to-kirkyard, then Stockbridge, New Town and Calton Hill.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,600;9..144,700&family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin="">
+<style>
+  :root{
+    --stone:#e9e5dc;        /* Craigleith sandstone */
+    --stone-deep:#ddd7ca;
+    --ink:#211e1a;          /* wet basalt */
+    --ink-soft:#5b554b;
+    --heather:#5d5187;      /* thistle violet */
+    --gorse:#9a6b1f;        /* whisky / gorse gold */
+    --paper:#f4f1ea;
+    --rule:#c9c2b2;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  html{scroll-behavior:smooth}
+  @media (prefers-reduced-motion: reduce){html{scroll-behavior:auto}}
+  body{
+    background:var(--stone);
+    color:var(--ink);
+    font-family:"IBM Plex Sans",system-ui,sans-serif;
+    font-size:16px;line-height:1.55;
+    -webkit-font-smoothing:antialiased;
+  }
+  a{color:var(--heather)}
+  a:focus-visible,button:focus-visible{outline:2px solid var(--heather);outline-offset:2px}
+
+  .wrap{max-width:1080px;margin:0 auto;padding:0 20px}
+
+  /* ---------- header ---------- */
+  header{
+    border-bottom:1px solid var(--ink);
+    padding:40px 0 28px;
+  }
+  .eyebrow{
+    font-family:"IBM Plex Mono",monospace;
+    font-size:12px;letter-spacing:.14em;text-transform:uppercase;
+    color:var(--ink-soft);
+  }
+  h1{
+    font-family:"Fraunces",serif;
+    font-weight:700;
+    font-size:clamp(2.2rem,6vw,3.6rem);
+    line-height:1.05;
+    margin:10px 0 14px;
+  }
+  h1 em{font-style:italic;font-weight:400;color:var(--heather)}
+  .lede{max-width:56ch;color:var(--ink-soft)}
+
+  /* ---------- map ---------- */
+  #map{
+    height:min(62vh,520px);
+    border:1px solid var(--ink);
+    border-top:none;
+    background:var(--stone-deep);
+    z-index:0;
+  }
+  .map-key{
+    display:flex;gap:20px;flex-wrap:wrap;
+    font-family:"IBM Plex Mono",monospace;font-size:12px;
+    padding:10px 0 0;color:var(--ink-soft);
+  }
+  .key-dot{display:inline-block;width:10px;height:10px;border-radius:50%;margin-right:6px;vertical-align:baseline}
+  .key-dot.d1{background:var(--heather)}
+  .key-dot.d2{background:var(--gorse)}
+
+  /* ---------- day sections ---------- */
+  .days{
+    display:grid;grid-template-columns:1fr 1fr;gap:48px;
+    padding:44px 0 20px;
+  }
+  @media (max-width:820px){.days{grid-template-columns:1fr;gap:36px}}
+
+  .day-head{border-bottom:2px solid var(--ink);padding-bottom:10px;margin-bottom:4px}
+  .day-num{
+    font-family:"IBM Plex Mono",monospace;font-size:12px;letter-spacing:.14em;text-transform:uppercase;
+  }
+  .day-num.d1{color:var(--heather)}
+  .day-num.d2{color:var(--gorse)}
+  h2{font-family:"Fraunces",serif;font-weight:600;font-size:1.55rem;line-height:1.15;margin-top:4px}
+  .day-note{font-size:.92rem;color:var(--ink-soft);margin-top:6px}
+
+  /* the timetable spine */
+  .stop{
+    display:grid;grid-template-columns:74px 1fr;gap:14px;
+    padding:16px 0;border-bottom:1px solid var(--rule);
+    cursor:pointer;
+  }
+  .stop:hover .stop-name, .stop:focus-within .stop-name{color:var(--heather)}
+  .stop-time{
+    font-family:"IBM Plex Mono",monospace;font-size:.82rem;font-weight:500;
+    padding-top:3px;white-space:nowrap;
+  }
+  .stop-name{
+    font-family:"Fraunces",serif;font-weight:600;font-size:1.08rem;line-height:1.25;
+    transition:color .15s;
+  }
+  .stop-note{font-size:.9rem;color:var(--ink-soft);margin-top:4px}
+  .stop-links{margin-top:6px;font-family:"IBM Plex Mono",monospace;font-size:.76rem}
+  .stop-links a{margin-right:14px;text-decoration:none;border-bottom:1px solid var(--heather)}
+  .stop-links a:hover{border-bottom-width:2px}
+  .must{
+    display:inline-block;margin-left:8px;
+    font-family:"IBM Plex Mono",monospace;font-size:.66rem;letter-spacing:.1em;text-transform:uppercase;
+    color:var(--paper);background:var(--ink);padding:2px 7px;border-radius:2px;
+    vertical-align:2px;
+  }
+
+  /* ---------- booking + footer ---------- */
+  .booking{
+    border:1px solid var(--ink);background:var(--paper);
+    padding:24px 26px;margin:12px 0 48px;
+  }
+  .booking h3{font-family:"Fraunces",serif;font-size:1.2rem;margin-bottom:10px}
+  .booking p{font-size:.92rem;margin-bottom:8px}
+  .booking p:last-child{margin-bottom:0}
+  .booking a{font-weight:600}
+  footer{
+    border-top:1px solid var(--ink);
+    padding:20px 0 44px;
+    font-family:"IBM Plex Mono",monospace;font-size:12px;color:var(--ink-soft);
+  }
+
+  /* leaflet marker labels */
+  .pin{
+    display:flex;align-items:center;justify-content:center;
+    width:26px;height:26px;border-radius:50%;
+    font-family:"IBM Plex Mono",monospace;font-size:12px;font-weight:500;
+    color:var(--paper);border:2px solid var(--paper);
+    box-shadow:0 1px 4px rgba(0,0,0,.35);
+  }
+  .pin.d1{background:var(--heather)}
+  .pin.d2{background:var(--gorse)}
+  .leaflet-popup-content{font-family:"IBM Plex Sans",sans-serif;font-size:13px}
+  .leaflet-popup-content strong{font-family:"Fraunces",serif;font-size:14px}
+</style>
 </head>
 <body>
-  <header class="page-header">
-    <div class="wrap">
-      <p class="eyebrow">Edinburgh · Old Town</p>
-      <h1>One-Day Walking Tour</h1>
-      <p class="lede">Nine stops from Edinburgh Castle to Armchair Books — all within a 15-minute walk of each other. Start at the top of the Royal Mile and work downhill.</p>
 
-      <aside class="stay" aria-label="Your hotel">
-        <p class="stay__label">Your stay</p>
-        <h2 class="stay__name">Courtyard by Marriott Edinburgh</h2>
-        <p class="stay__addr">1–3 Baxter’s Place, Edinburgh EH1 3AF</p>
-        <p class="stay__tip"><strong>To the Castle:</strong> ~17 min on foot — head west on Princes Street, turn up The Mound, the Castle esplanade is at the top.</p>
-        <p class="stay__tip"><strong>Back to base after stop 9:</strong> ~18 min uphill — Grassmarket → George IV Bridge → North Bridge, then a short walk to Baxter’s Place.</p>
-      </aside>
+<header>
+  <div class="wrap">
+    <div class="eyebrow">Edinburgh &middot; Two days on foot &middot; ~4–5 mi per day</div>
+    <h1>Castle, kirkyard, <em>and the quiet side of town</em></h1>
+    <p class="lede">Two walking loops that follow the city's actual geography: Old Town top-to-bottom on day one, then Dean Village, Stockbridge and Calton Hill on day two. Tap any stop to find it on the map.</p>
+  </div>
+</header>
 
-      <div class="layout-toggle" role="group" aria-label="Choose layout">
-        <button type="button" class="layout-toggle__btn is-active" data-layout="scroll" aria-pressed="true">
-          <span class="layout-toggle__icon" aria-hidden="true">▤</span>
-          Single scroll
-        </button>
-        <button type="button" class="layout-toggle__btn" data-layout="timeline" aria-pressed="false">
-          <span class="layout-toggle__icon" aria-hidden="true">▥</span>
-          Timeline cards
-        </button>
-      </div>
+<div class="wrap">
+  <div id="map" role="region" aria-label="Map of itinerary stops"></div>
+  <div class="map-key">
+    <span><span class="key-dot d1"></span>Day 1 — Old Town</span>
+    <span><span class="key-dot d2"></span>Day 2 — Stockbridge &amp; Calton Hill</span>
+  </div>
+</div>
+
+<div class="wrap days">
+
+  <section aria-labelledby="d1h">
+    <div class="day-head">
+      <div class="day-num d1">Day 01 / Old Town</div>
+      <h2 id="d1h">Castle to Kirkyard</h2>
+      <p class="day-note">Start at the top of the Royal Mile and work downhill. Every stop is within 15 minutes of the last.</p>
     </div>
-  </header>
+    <div id="day1-list"></div>
+  </section>
 
-  <main class="wrap">
-
-    <!-- Static mini-map of the route -->
-    <section class="map" aria-label="Route map of the tour">
-      <h2 class="map__title">Route at a glance</h2>
-      <p class="map__caption">From the hotel (★) up to the Castle, then downhill through the Old Town to Armchair Books (9). Total walk: ~3.1 km.</p>
-      <figure class="map__figure">
-        <svg viewBox="0 0 720 460" role="img" aria-labelledby="map-title" xmlns="http://www.w3.org/2000/svg">
-          <title id="map-title">Map of Edinburgh tour route: hotel to Castle, down the Royal Mile to Armchair Books</title>
-
-          <!-- Subtle grid for orientation -->
-          <defs>
-            <pattern id="grid" width="60" height="60" patternUnits="userSpaceOnUse">
-              <path d="M 60 0 L 0 0 0 60" fill="none" stroke="#e9dfca" stroke-width="0.5"/>
-            </pattern>
-          </defs>
-          <rect width="720" height="460" fill="url(#grid)"/>
-
-          <!-- Old Town spine (Royal Mile) — decorative dashed guide -->
-          <path d="M 50,332 Q 130,330 207,322 Q 267,310 295,392 Q 360,388 411,384"
-                fill="none" stroke="#d9cfba" stroke-width="1.5" stroke-dasharray="4 4"/>
-
-          <!-- Actual walking route (hotel → stops 1..9) -->
-          <polyline points="562.7,50 50,331.5 207,320.4 206.3,327.6 267.7,298.8 266.9,332.7 295.4,392.1 411.4,384.2 151.1,402.7 61.3,410"
-                    fill="none" stroke="#b8421e" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
-
-          <!-- Hotel marker (star) -->
-          <g transform="translate(562.7,50)">
-            <circle r="14" fill="#1c1a17"/>
-            <text y="5" text-anchor="middle" fill="#f7f3ec" font-size="14" font-weight="700">★</text>
-            <text y="-22" text-anchor="middle" fill="#1c1a17" font-size="12" font-weight="600" font-family="ui-sans-serif,system-ui,sans-serif">Hotel</text>
-          </g>
-
-          <!-- Numbered stops -->
-          <g font-family="ui-sans-serif,system-ui,sans-serif" font-size="11" font-weight="700" fill="#fff">
-            <g transform="translate(50,331.5)"><circle r="13" fill="#b8421e"/><text y="4" text-anchor="middle">1</text></g>
-            <g transform="translate(207,320.4)"><circle r="13" fill="#b8421e"/><text y="4" text-anchor="middle">2</text></g>
-            <g transform="translate(206.3,327.6)"><circle r="13" fill="#b8421e"/><text y="4" text-anchor="middle">3</text></g>
-            <g transform="translate(267.7,298.8)"><circle r="13" fill="#b8421e"/><text y="4" text-anchor="middle">4</text></g>
-            <g transform="translate(266.9,332.7)"><circle r="13" fill="#b8421e"/><text y="4" text-anchor="middle">5</text></g>
-            <g transform="translate(295.4,392.1)"><circle r="13" fill="#b8421e"/><text y="4" text-anchor="middle">6</text></g>
-            <g transform="translate(411.4,384.2)"><circle r="13" fill="#b8421e"/><text y="4" text-anchor="middle">7</text></g>
-            <g transform="translate(151.1,402.7)"><circle r="13" fill="#5c3a6b"/><text y="4" text-anchor="middle">8</text></g>
-            <g transform="translate(61.3,410)"><circle r="13" fill="#5c3a6b"/><text y="4" text-anchor="middle">9</text></g>
-          </g>
-
-          <!-- Stop labels (only sparse-area stops; dense cluster 2-5 get their labels in the legend below) -->
-          <g font-family="ui-sans-serif,system-ui,sans-serif" font-size="11" fill="#1c1a17">
-            <text x="68"  y="328" font-weight="600">Edinburgh Castle</text>
-            <text x="428" y="380" font-weight="600">Nat. Museum</text>
-            <text x="168" y="398" font-weight="600">The Vennel</text>
-            <text x="78"  y="412" font-weight="600">Armchair Books</text>
-          </g>
-
-          <!-- North arrow -->
-          <g transform="translate(670,40)" font-family="ui-sans-serif,system-ui,sans-serif" font-size="11" fill="#7a7064">
-            <line x1="0" y1="14" x2="0" y2="-14" stroke="#7a7064" stroke-width="1"/>
-            <polygon points="0,-18 -5,-6 5,-6" fill="#7a7064"/>
-            <text y="28" text-anchor="middle">N</text>
-          </g>
-        </svg>
-        <figcaption class="map__legend">
-          <ol class="map__legend-list">
-            <li><span class="num">1</span> Edinburgh Castle</li>
-            <li><span class="num">2</span> Camera Obscura</li>
-            <li><span class="num">3</span> The Witchery</li>
-            <li><span class="num">4</span> Writers' Museum</li>
-            <li><span class="num">5</span> Victoria Street</li>
-            <li><span class="num">6</span> Greyfriars Kirkyard</li>
-            <li><span class="num">7</span> National Museum of Scotland</li>
-            <li><span class="num num--evening">8</span> The Vennel Viewpoint</li>
-            <li><span class="num num--evening">9</span> Armchair Books</li>
-          </ol>
-        </figcaption>
-      </figure>
-    </section>
-
-    <!-- LAYOUT 1: Single vertical scroll -->
-    <section id="layout-scroll" class="layout layout--scroll is-active" aria-label="Stops in vertical order">
-      <ol class="stops-scroll">
-        <li class="stop-block" data-block="pre">
-          <h2 class="stop-block__time">9:13 AM <span class="stop-block__chip">From your hotel</span></h2>
-          <article class="stop stop--hotel">
-            <header class="stop__head">
-              <span class="stop__num">★</span>
-              <div class="stop__title">
-                <h3>Courtyard by Marriott Edinburgh</h3>
-                <p class="stop__meta">
-                  <span class="rating">Your stay</span>
-                  <span class="reviews"></span>
-                  <span class="dot">·</span>
-                  <span class="kind">1–3 Baxter’s Place</span>
-                </p>
-              </div>
-            </header>
-            <p class="stop__body">Leave by 9:13 to make the 9:30 Castle slot. Walk west on Princes Street, turn up The Mound — the Castle esplanade is at the top. ~17 min on foot.</p>
-          </article>
-        </li>
-
-        <li class="stop-block" data-block="morning">
-          <h2 class="stop-block__time">9:30 AM <span class="stop-block__chip">Morning</span></h2>
-          <article class="stop stop--lead">
-            <header class="stop__head">
-              <span class="stop__num">1</span>
-              <div class="stop__title">
-                <h3>Edinburgh Castle</h3>
-                <p class="stop__meta">
-                  <span class="rating" aria-label="Rated 4.6 out of 5">★ 4.6</span>
-                  <span class="reviews">(107,703)</span>
-                  <span class="dot">·</span>
-                  <span class="kind">Castle</span>
-                </p>
-              </div>
-            </header>
-            <p class="stop__body">Book the first timed slot — crowds double by 11. Budget 2 hours. Stay for the 1pm gun if you run long.</p>
-          </article>
-        </li>
-
-        <li class="stop-block" data-block="morning">
-          <h2 class="stop-block__time">11:45 AM</h2>
-          <article class="stop">
-            <header class="stop__head">
-              <span class="stop__num">2</span>
-              <div class="stop__title">
-                <h3>Camera Obscura &amp; World of Illusions</h3>
-                <p class="stop__meta">
-                  <span class="rating">★ 4.6</span>
-                  <span class="reviews">(15,881)</span>
-                  <span class="dot">·</span>
-                  <span class="kind">Museum</span>
-                </p>
-              </div>
-            </header>
-            <p class="stop__body">Two doors down from the castle esplanade. Do the rooftop and the Victorian camera tour; skip floors if short on time.</p>
-          </article>
-        </li>
-
-        <li class="stop-block" data-block="afternoon">
-          <h2 class="stop-block__time">1:00 PM <span class="stop-block__chip">Afternoon</span></h2>
-          <article class="stop">
-            <header class="stop__head">
-              <span class="stop__num">3</span>
-              <div class="stop__title">
-                <h3>The Witchery</h3>
-                <p class="stop__meta">
-                  <span class="rating">★ 4.3</span>
-                  <span class="reviews">(4,033)</span>
-                  <span class="dot">·</span>
-                  <span class="kind">Restaurant</span>
-                </p>
-              </div>
-            </header>
-            <p class="stop__body">Set lunch is the affordable way in — two courses around £30. Book well ahead; note their strict cancellation fee.</p>
-          </article>
-        </li>
-
-        <li class="stop-block" data-block="afternoon">
-          <h2 class="stop-block__time">2:30 PM</h2>
-          <article class="stop">
-            <header class="stop__head">
-              <span class="stop__num">4</span>
-              <div class="stop__title">
-                <h3>The Writers' Museum</h3>
-                <p class="stop__meta">
-                  <span class="rating">★ 4.4</span>
-                  <span class="reviews">(2,173)</span>
-                  <span class="dot">·</span>
-                  <span class="kind">Museum</span>
-                </p>
-              </div>
-            </header>
-            <p class="stop__body">Free, small, 30–45 min. The entrance in Lady Stair's Close is easy to walk past — watch for it.</p>
-          </article>
-        </li>
-
-        <li class="stop-block" data-block="afternoon">
-          <h2 class="stop-block__time">3:15 PM</h2>
-          <article class="stop">
-            <header class="stop__head">
-              <span class="stop__num">5</span>
-              <div class="stop__title">
-                <h3>Victoria Street</h3>
-                <p class="stop__meta">
-                  <span class="rating">—</span>
-                  <span class="reviews"></span>
-                  <span class="dot">·</span>
-                  <span class="kind">Route</span>
-                </p>
-              </div>
-            </header>
-            <p class="stop__body">The curved 'Diagon Alley' street. Walk the upper terrace level too — better photos, fewer people.</p>
-          </article>
-        </li>
-
-        <li class="stop-block" data-block="afternoon">
-          <h2 class="stop-block__time">3:45 PM</h2>
-          <article class="stop">
-            <header class="stop__head">
-              <span class="stop__num">6</span>
-              <div class="stop__title">
-                <h3>Greyfriars Kirkyard</h3>
-                <p class="stop__meta">
-                  <span class="rating">★ 4.7</span>
-                  <span class="reviews">(2,083)</span>
-                  <span class="dot">·</span>
-                  <span class="kind">Cemetery</span>
-                </p>
-              </div>
-            </header>
-            <p class="stop__body">Thomas Riddell's grave is along the back wall path near the Flodden Wall gate. Free, open 24 hours.</p>
-          </article>
-        </li>
-
-        <li class="stop-block" data-block="afternoon">
-          <h2 class="stop-block__time">4:15 PM</h2>
-          <article class="stop">
-            <header class="stop__head">
-              <span class="stop__num">7</span>
-              <div class="stop__title">
-                <h3>National Museum of Scotland</h3>
-                <p class="stop__meta">
-                  <span class="rating">★ 4.8</span>
-                  <span class="reviews">(58,488)</span>
-                  <span class="dot">·</span>
-                  <span class="kind">Tourist Attraction</span>
-                </p>
-              </div>
-            </header>
-            <p class="stop__body">Free. You only get ~45 min before 5pm close — hit the Grand Gallery, Dolly the Sheep, and the rooftop terrace view. Come back another day for the full 3 hours if it grabs you.</p>
-          </article>
-        </li>
-
-        <li class="stop-block" data-block="evening">
-          <h2 class="stop-block__time">5:15 PM <span class="stop-block__chip">Evening</span></h2>
-          <article class="stop">
-            <header class="stop__head">
-              <span class="stop__num">8</span>
-              <div class="stop__title">
-                <h3>The Vennel Viewpoint</h3>
-                <p class="stop__meta">
-                  <span class="rating">★ 4.7</span>
-                  <span class="reviews">(1,831)</span>
-                  <span class="dot">·</span>
-                  <span class="kind">Tourist Attraction</span>
-                </p>
-              </div>
-            </header>
-            <p class="stop__body">Best castle photo in the city, framed by the stone steps. Golden hour is the move.</p>
-          </article>
-        </li>
-
-        <li class="stop-block" data-block="evening">
-          <h2 class="stop-block__time">5:30 PM</h2>
-          <article class="stop">
-            <header class="stop__head">
-              <span class="stop__num">9</span>
-              <div class="stop__title">
-                <h3>Armchair Books</h3>
-                <p class="stop__meta">
-                  <span class="rating">★ 4.7</span>
-                  <span class="reviews">(1,467)</span>
-                  <span class="dot">·</span>
-                  <span class="kind">Bookshop</span>
-                </p>
-              </div>
-            </header>
-            <p class="stop__body">Secondhand stacks to the ceiling, open until 6:30. Check the vintage shelves at the back. Dinner after in the Grassmarket, right below you.</p>
-          </article>
-        </li>
-
-        <li class="stop-block" data-block="post">
-          <h2 class="stop-block__time">7:00 PM <span class="stop-block__chip">Back to base</span></h2>
-          <article class="stop stop--hotel">
-            <header class="stop__head">
-              <span class="stop__num">⌂</span>
-              <div class="stop__title">
-                <h3>Courtyard by Marriott Edinburgh</h3>
-                <p class="stop__meta">
-                  <span class="rating">Return</span>
-                  <span class="reviews"></span>
-                  <span class="dot">·</span>
-                  <span class="kind">~18 min uphill</span>
-                </p>
-              </div>
-            </header>
-            <p class="stop__body">Grassmarket → up George IV Bridge → North Bridge → short walk to Baxter’s Place. Or grab a black cab from the Grassmarket rank and be back in 5.</p>
-          </article>
-        </li>
-      </ol>
-    </section>
-
-    <!-- LAYOUT 2: Timeline with cards -->
-    <section id="layout-timeline" class="layout layout--timeline" aria-label="Stops on a timeline" hidden>
-      <div class="timeline">
-        <div class="timeline__rail" aria-hidden="true"></div>
-
-        <article class="card card--hotel" data-block="pre">
-          <div class="card__time">
-            <span class="card__num">★</span>
-            <span class="card__clock">9:13 AM</span>
-          </div>
-          <div class="card__body">
-            <p class="card__block">From your hotel</p>
-            <h3>Courtyard by Marriott Edinburgh</h3>
-            <p class="card__meta"><span class="rating">Your stay</span> · <span class="kind">1–3 Baxter’s Place</span></p>
-            <p class="card__copy">Leave by 9:13 to make the 9:30 Castle slot. Walk west on Princes Street, turn up The Mound — the Castle esplanade is at the top. ~17 min on foot.</p>
-          </div>
-        </article>
-
-        <article class="card" data-block="morning">
-          <div class="card__time">
-            <span class="card__num">1</span>
-            <span class="card__clock">9:30 AM</span>
-          </div>
-          <div class="card__body">
-            <p class="card__block">Morning</p>
-            <h3>Edinburgh Castle</h3>
-            <p class="card__meta"><span class="rating">★ 4.6</span> <span class="reviews">(107,703)</span> · <span class="kind">Castle</span></p>
-            <p class="card__copy">Book the first timed slot — crowds double by 11. Budget 2 hours. Stay for the 1pm gun if you run long.</p>
-          </div>
-        </article>
-
-        <article class="card" data-block="morning">
-          <div class="card__time">
-            <span class="card__num">2</span>
-            <span class="card__clock">11:45 AM</span>
-          </div>
-          <div class="card__body">
-            <p class="card__block">Morning</p>
-            <h3>Camera Obscura &amp; World of Illusions</h3>
-            <p class="card__meta"><span class="rating">★ 4.6</span> <span class="reviews">(15,881)</span> · <span class="kind">Museum</span></p>
-            <p class="card__copy">Two doors down from the castle esplanade. Do the rooftop and the Victorian camera tour; skip floors if short on time.</p>
-          </div>
-        </article>
-
-        <article class="card" data-block="afternoon">
-          <div class="card__time">
-            <span class="card__num">3</span>
-            <span class="card__clock">1:00 PM</span>
-          </div>
-          <div class="card__body">
-            <p class="card__block">Afternoon</p>
-            <h3>The Witchery</h3>
-            <p class="card__meta"><span class="rating">★ 4.3</span> <span class="reviews">(4,033)</span> · <span class="kind">Restaurant</span></p>
-            <p class="card__copy">Set lunch is the affordable way in — two courses around £30. Book well ahead; note their strict cancellation fee.</p>
-          </div>
-        </article>
-
-        <article class="card" data-block="afternoon">
-          <div class="card__time">
-            <span class="card__num">4</span>
-            <span class="card__clock">2:30 PM</span>
-          </div>
-          <div class="card__body">
-            <p class="card__block">Afternoon</p>
-            <h3>The Writers' Museum</h3>
-            <p class="card__meta"><span class="rating">★ 4.4</span> <span class="reviews">(2,173)</span> · <span class="kind">Museum</span></p>
-            <p class="card__copy">Free, small, 30–45 min. The entrance in Lady Stair's Close is easy to walk past — watch for it.</p>
-          </div>
-        </article>
-
-        <article class="card" data-block="afternoon">
-          <div class="card__time">
-            <span class="card__num">5</span>
-            <span class="card__clock">3:15 PM</span>
-          </div>
-          <div class="card__body">
-            <p class="card__block">Afternoon</p>
-            <h3>Victoria Street</h3>
-            <p class="card__meta"><span class="rating">—</span> · <span class="kind">Route</span></p>
-            <p class="card__copy">The curved 'Diagon Alley' street. Walk the upper terrace level too — better photos, fewer people.</p>
-          </div>
-        </article>
-
-        <article class="card" data-block="afternoon">
-          <div class="card__time">
-            <span class="card__num">6</span>
-            <span class="card__clock">3:45 PM</span>
-          </div>
-          <div class="card__body">
-            <p class="card__block">Afternoon</p>
-            <h3>Greyfriars Kirkyard</h3>
-            <p class="card__meta"><span class="rating">★ 4.7</span> <span class="reviews">(2,083)</span> · <span class="kind">Cemetery</span></p>
-            <p class="card__copy">Thomas Riddell's grave is along the back wall path near the Flodden Wall gate. Free, open 24 hours.</p>
-          </div>
-        </article>
-
-        <article class="card" data-block="afternoon">
-          <div class="card__time">
-            <span class="card__num">7</span>
-            <span class="card__clock">4:15 PM</span>
-          </div>
-          <div class="card__body">
-            <p class="card__block">Afternoon</p>
-            <h3>National Museum of Scotland</h3>
-            <p class="card__meta"><span class="rating">★ 4.8</span> <span class="reviews">(58,488)</span> · <span class="kind">Tourist Attraction</span></p>
-            <p class="card__copy">Free. You only get ~45 min before 5pm close — hit the Grand Gallery, Dolly the Sheep, and the rooftop terrace view. Come back another day for the full 3 hours if it grabs you.</p>
-          </div>
-        </article>
-
-        <article class="card" data-block="evening">
-          <div class="card__time">
-            <span class="card__num">8</span>
-            <span class="card__clock">5:15 PM</span>
-          </div>
-          <div class="card__body">
-            <p class="card__block">Evening</p>
-            <h3>The Vennel Viewpoint</h3>
-            <p class="card__meta"><span class="rating">★ 4.7</span> <span class="reviews">(1,831)</span> · <span class="kind">Tourist Attraction</span></p>
-            <p class="card__copy">Best castle photo in the city, framed by the stone steps. Golden hour is the move.</p>
-          </div>
-        </article>
-
-        <article class="card" data-block="evening">
-          <div class="card__time">
-            <span class="card__num">9</span>
-            <span class="card__clock">5:30 PM</span>
-          </div>
-          <div class="card__body">
-            <p class="card__block">Evening</p>
-            <h3>Armchair Books</h3>
-            <p class="card__meta"><span class="rating">★ 4.7</span> <span class="reviews">(1,467)</span> · <span class="kind">Bookshop</span></p>
-            <p class="card__copy">Secondhand stacks to the ceiling, open until 6:30. Check the vintage shelves at the back. Dinner after in the Grassmarket, right below you.</p>
-          </div>
-        </article>
-
-        <article class="card card--hotel" data-block="post">
-          <div class="card__time">
-            <span class="card__num">⌂</span>
-            <span class="card__clock">7:00 PM</span>
-          </div>
-          <div class="card__body">
-            <p class="card__block">Back to base</p>
-            <h3>Courtyard by Marriott Edinburgh</h3>
-            <p class="card__meta"><span class="rating">Return</span> · <span class="kind">~18 min uphill</span></p>
-            <p class="card__copy">Grassmarket → up George IV Bridge → North Bridge → short walk to Baxter’s Place. Or grab a black cab from the Grassmarket rank and be back in 5.</p>
-          </div>
-        </article>
-      </div>
-    </section>
-
-  </main>
-
-  <footer class="page-footer">
-    <div class="wrap">
-      <p>One day, nine stops, all downhill from the Castle. Wear comfortable shoes and bring a light layer — the Old Town wind has opinions.</p>
+  <section aria-labelledby="d2h">
+    <div class="day-head">
+      <div class="day-num d2">Day 02 / North &amp; East</div>
+      <h2 id="d2h">Stockbridge, New Town &amp; Calton Hill</h2>
+      <p class="day-note">The quieter, prettier loop. Beat the crowds to Dean Village, brunch in Stockbridge, end on Calton Hill for sunset.</p>
     </div>
-  </footer>
+    <div id="day2-list"></div>
+  </section>
 
-  <script src="./app.js" defer></script>
+</div>
+
+<div class="wrap">
+  <div class="booking">
+    <h3>Book these before you go</h3>
+    <p><strong>Edinburgh Castle</strong> — timed entry sells out; take the first slot of the day. <a href="https://www.edinburghcastle.scot/tickets" target="_blank" rel="noopener">edinburghcastle.scot/tickets</a></p>
+    <p><strong>The Witchery</strong> — the set lunch (~£30, two courses) is the affordable way in; note the strict cancellation fee. <a href="https://www.thewitchery.com" target="_blank" rel="noopener">thewitchery.com</a></p>
+    <p><strong>The Chocolatarium</strong> — the 90-minute tour where you make your own bar. <a href="https://www.chocolatarium.co.uk" target="_blank" rel="noopener">chocolatarium.co.uk</a></p>
+  </div>
+</div>
+
+<footer>
+  <div class="wrap">In July the sun sets after 9:30 PM — the evening is longer than the schedule suggests. &middot; Optional add-on: Arthur's Seat at sunrise (2 hrs, real elevation).</div>
+</footer>
+
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
+<script>
+const DAY1 = [
+  {t:"9:30 AM", n:"Edinburgh Castle", must:true, lat:55.9485947, lng:-3.1999135,
+   note:"Book the first timed slot — crowds double by 11. Budget two hours; the 1 PM gun fires if you run long.",
+   map:"https://maps.google.com/?cid=5087412727581510232", site:"https://www.edinburghcastle.scot"},
+  {t:"11:45 AM", n:"Camera Obscura & World of Illusions", lat:55.9489544, lng:-3.1956707,
+   note:"Two doors down the esplanade. Do the rooftop and the Victorian camera tour; skip floors if short on time.",
+   map:"https://maps.google.com/?cid=16142815702660895607", site:"https://www.camera-obscura.co.uk"},
+  {t:"1:00 PM", n:"Lunch — The Witchery", must:true, lat:55.9487885, lng:-3.1956276,
+   note:"Set lunch is the value play: two courses around £30. Book well ahead.",
+   map:"https://maps.google.com/?cid=1954964039509368811", site:"https://www.thewitchery.com"},
+  {t:"2:30 PM", n:"The Writers' Museum", lat:55.949708, lng:-3.1937388,
+   note:"Free, 30–45 min. The entrance in Lady Stair's Close is easy to walk past — watch for it.",
+   map:"https://maps.google.com/?cid=7898657216517477187", site:"https://cultureedinburgh.com/our-venues/writers-museum"},
+  {t:"3:15 PM", n:"Victoria Street", lat:55.9487342, lng:-3.1931981,
+   note:"The curved 'Diagon Alley' street. Walk the upper terrace level too — better photos, fewer people.",
+   map:"https://maps.google.com/?cid=9041591883893928563"},
+  {t:"3:45 PM", n:"Greyfriars Kirkyard", lat:55.946674, lng:-3.1921255,
+   note:"Thomas Riddell's grave sits along the back wall path near the Flodden Wall gate. Free, open 24 hours.",
+   map:"https://maps.google.com/?cid=16235620236844633223", site:"https://greyfriarskirk.com/visit/kirkyard/"},
+  {t:"4:15 PM", n:"National Museum of Scotland", lat:55.9469995, lng:-3.1905666,
+   note:"Free. ~45 min before close: Grand Gallery, Dolly the Sheep, rooftop terrace. Return another day for the full three hours if it grabs you.",
+   map:"https://maps.google.com/?cid=9857296582318142915", site:"https://www.nms.ac.uk/national-museum-of-scotland/"},
+  {t:"5:15 PM", n:"The Vennel Viewpoint", lat:55.946443, lng:-3.197256,
+   note:"Best castle photo in the city, framed by stone steps. Golden hour is the move.",
+   map:"https://maps.google.com/?cid=12807116292195762213"},
+  {t:"5:30 PM", n:"Armchair Books", lat:55.946324, lng:-3.200031,
+   note:"Secondhand stacks to the ceiling, open until 6:30. Check the vintage shelves at the back — then dinner in the Grassmarket below.",
+   map:"https://maps.google.com/?cid=12693524302604863410", site:"http://www.armchairbooks.co.uk"}
+];
+const DAY2 = [
+  {t:"9:00 AM", n:"Dean Village", must:true, lat:55.9522, lng:-3.2190,
+   note:"Go before 10 — it's tiny and fills with photographers fast. Leave along the Water of Leith path toward Stockbridge: the best 15 minutes of the day.",
+   map:"https://www.google.com/maps/search/?api=1&query=Dean+Village+Edinburgh"},
+  {t:"10:00 AM", n:"Circus Lane", lat:55.9581071, lng:-3.2050802,
+   note:"Five-minute photo stop. The mews with St Stephen's clock tower behind it is the shot.",
+   map:"https://maps.google.com/?cid=2509812258059114292"},
+  {t:"10:15 AM", n:"Brunch — The Pantry", lat:55.9572035, lng:-3.2056372,
+   note:"Around the corner from Circus Lane. Expect a short weekend wait; the haggis fry-up earns it.",
+   map:"https://maps.google.com/?cid=419157568579004307", site:"http://www.thepantryedinburgh.co.uk"},
+  {t:"11:45 AM", n:"Scottish National Portrait Gallery", lat:55.9554998, lng:-3.1935213,
+   note:"Free. The neo-Gothic Great Hall alone justifies the stop. 60–90 minutes.",
+   map:"https://maps.google.com/?cid=3162451449492144006", site:"https://www.nationalgalleries.org/visit/scottish-national-portrait-gallery"},
+  {t:"1:30 PM", n:"Scott Monument & Princes Street Gardens", lat:55.952381, lng:-3.1932741,
+   note:"Climb the 287 steps if you want the workout, or walk the gardens beneath with the castle looming above.",
+   map:"https://maps.google.com/?cid=16827017315051771683", site:"https://www.edinburghmuseums.org.uk/venue/scott-monument/"},
+  {t:"2:15 PM", n:"1820 Rooftop Bar at Johnnie Walker", lat:55.9504694, lng:-3.2076533,
+   note:"West end of Princes Street. Straight-on castle views with a drink; the full Johnnie Walker Experience downstairs takes 90 min if you have them.",
+   map:"https://maps.google.com/?cid=569368434008832867", site:"https://www.johnniewalker.com/en-gb/visit-us-princes-street/"},
+  {t:"3:30 PM", n:"The Chocolatarium", must:true, lat:55.9508746, lng:-3.184016,
+   note:"Book the 90-minute tour ahead — you make your own bar to take home. Perfectly positioned for Calton Hill after.",
+   map:"https://maps.google.com/?cid=7896779718380057269", site:"https://www.chocolatarium.co.uk"},
+  {t:"5:30 PM", n:"Calton Hill", lat:55.9550465, lng:-3.1827409,
+   note:"Ten-minute climb, best sunset panorama in the city — castle, Arthur's Seat and the Firth of Forth in one sweep.",
+   map:"https://maps.google.com/?cid=10484861952257910493"}
+];
+
+const reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+const map = L.map('map', {scrollWheelZoom:false});
+L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', {
+  attribution:'&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> &copy; <a href="https://carto.com/attributions">CARTO</a>',
+  maxZoom:19
+}).addTo(map);
+
+const markers = [];
+function build(day, cls, listId, color){
+  const list = document.getElementById(listId);
+  const latlngs = [];
+  day.forEach((s, i) => {
+    latlngs.push([s.lat, s.lng]);
+    const icon = L.divIcon({className:'', html:`<div class="pin ${cls}">${i+1}</div>`, iconSize:[26,26], iconAnchor:[13,13]});
+    const m = L.marker([s.lat, s.lng], {icon}).addTo(map)
+      .bindPopup(`<strong>${i+1}. ${s.n}</strong><br>${s.t}<br><a href="${s.map}" target="_blank" rel="noopener">Open in Google Maps</a>`);
+    markers.push(m);
+
+    const el = document.createElement('div');
+    el.className = 'stop';
+    el.setAttribute('tabindex','0');
+    el.setAttribute('role','button');
+    el.setAttribute('aria-label', `${s.n}, ${s.t}. Show on map.`);
+    el.innerHTML = `
+      <div class="stop-time">${s.t}</div>
+      <div>
+        <div class="stop-name">${i+1}. ${s.n}${s.must ? '<span class="must">Book ahead</span>' : ''}</div>
+        <div class="stop-note">${s.note}</div>
+        <div class="stop-links">
+          <a href="${s.map}" target="_blank" rel="noopener">Maps ↗</a>
+          ${s.site ? `<a href="${s.site}" target="_blank" rel="noopener">Website ↗</a>` : ''}
+        </div>
+      </div>`;
+    const go = (e) => {
+      if (e.target.closest('a')) return;
+      const z = Math.max(map.getZoom(), 16);
+      reduced ? map.setView([s.lat, s.lng], z) : map.flyTo([s.lat, s.lng], z, {duration:.6});
+      m.openPopup();
+      document.getElementById('map').scrollIntoView({behavior: reduced ? 'auto' : 'smooth', block:'nearest'});
+    };
+    el.addEventListener('click', go);
+    el.addEventListener('keydown', (e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); go(e); } });
+    list.appendChild(el);
+  });
+  L.polyline(latlngs, {color, weight:3, opacity:.55, dashArray:'6 6'}).addTo(map);
+}
+
+build(DAY1, 'd1', 'day1-list', '#5d5187');
+build(DAY2, 'd2', 'day2-list', '#9a6b1f');
+map.fitBounds(L.featureGroup(markers).getBounds().pad(0.12));
+</script>
 </body>
 </html>

@@ -1,35 +1,26 @@
-# Edinburgh Old Town — One-Day Walking Tour
+# Edinburgh — Two Walking Loops
 
-A single-page guided walking tour of Edinburgh's Old Town. Nine stops from Edinburgh Castle to Armchair Books, all within a 15-minute walk.
+A self-contained single-page itinerary for Edinburgh. Two days on foot, all stops geocoded and pinned on an interactive Leaflet map.
 
-## Run locally
-
-No build step. Just open `index.html` in a browser, or:
-
-```bash
-python -m http.server 8000
-# then visit http://localhost:8000/
-```
+- **Day 1 — Old Town:** Edinburgh Castle → Camera Obscura → The Witchery → Writers' Museum → Victoria Street → Greyfriars Kirkyard → National Museum of Scotland → The Vennel Viewpoint → Armchair Books.
+- **Day 2 — North & East:** Dean Village → Circus Lane → The Pantry (brunch) → Scottish National Portrait Gallery → Scott Monument → 1820 Rooftop Bar at Johnnie Walker → The Chocolatarium → Calton Hill.
 
 ## Files
 
-- `index.html` — page markup. Contains **both** layouts, with the second hidden by default.
-- `styles.css` — design tokens + both layout stylesheets. Layout-specific rules are scoped under `.layout--scroll` and `.layout--timeline`.
-- `app.js` — layout toggle. Choice is saved to `localStorage` so reloads keep the view you picked.
+- `index.html` — the whole page (HTML, CSS, JS, and Leaflet map). No build step, no extra files.
+- `README.md` — this file.
 
-## Layouts
+## Run locally
 
-The header has a two-button toggle that switches between:
+No build. Just open `index.html` in a browser, or:
 
-- **Single scroll** — vertical list, time headings, color-coded chips for morning/afternoon/evening.
-- **Timeline cards** — sticky left rail with colored nodes, time + number on the left, full stop card on the right.
+```bash
+python -m http.server 8000
+# visit http://localhost:8000/
+```
 
-Both render the same data; switching is a CSS toggle, not a navigation.
-
-## Editing content
-
-Each stop lives twice in `index.html` — once inside `#layout-scroll`, once inside `#layout-timeline`. To change a stop's text, rating, or time, update both blocks. (Future cleanup: render the stops from a single JSON array if the list grows past ~15 stops.)
+The page pulls in two CDN resources at runtime: Google Fonts (Fraunces, IBM Plex Sans/Mono) and Leaflet 1.9.4. Both are pinned by SRI hash.
 
 ## Deployment
 
-Designed to deploy as static files to Cloudflare Pages. Connect the GitHub repo to Pages with no build command and the publish directory set to `/` (the root of this repo, since there's no build step).
+Static files. Designed to deploy to Cloudflare Workers/Pages with no build command and the publish directory set to the repo root.
