@@ -14,6 +14,14 @@
       <h1>One-Day Walking Tour</h1>
       <p class="lede">Nine stops from Edinburgh Castle to Armchair Books — all within a 15-minute walk of each other. Start at the top of the Royal Mile and work downhill.</p>
 
+      <aside class="stay" aria-label="Your hotel">
+        <p class="stay__label">Your stay</p>
+        <h2 class="stay__name">Courtyard by Marriott Edinburgh</h2>
+        <p class="stay__addr">1–3 Baxter’s Place, Edinburgh EH1 3AF</p>
+        <p class="stay__tip"><strong>To the Castle:</strong> ~17 min on foot — head west on Princes Street, turn up The Mound, the Castle esplanade is at the top.</p>
+        <p class="stay__tip"><strong>Back to base after stop 9:</strong> ~18 min uphill — Grassmarket → George IV Bridge → North Bridge, then a short walk to Baxter’s Place.</p>
+      </aside>
+
       <div class="layout-toggle" role="group" aria-label="Choose layout">
         <button type="button" class="layout-toggle__btn is-active" data-layout="scroll" aria-pressed="true">
           <span class="layout-toggle__icon" aria-hidden="true">▤</span>
@@ -29,9 +37,103 @@
 
   <main class="wrap">
 
+    <!-- Static mini-map of the route -->
+    <section class="map" aria-label="Route map of the tour">
+      <h2 class="map__title">Route at a glance</h2>
+      <p class="map__caption">From the hotel (★) up to the Castle, then downhill through the Old Town to Armchair Books (9). Total walk: ~3.1 km.</p>
+      <figure class="map__figure">
+        <svg viewBox="0 0 720 460" role="img" aria-labelledby="map-title" xmlns="http://www.w3.org/2000/svg">
+          <title id="map-title">Map of Edinburgh tour route: hotel to Castle, down the Royal Mile to Armchair Books</title>
+
+          <!-- Subtle grid for orientation -->
+          <defs>
+            <pattern id="grid" width="60" height="60" patternUnits="userSpaceOnUse">
+              <path d="M 60 0 L 0 0 0 60" fill="none" stroke="#e9dfca" stroke-width="0.5"/>
+            </pattern>
+          </defs>
+          <rect width="720" height="460" fill="url(#grid)"/>
+
+          <!-- Old Town spine (Royal Mile) — decorative dashed guide -->
+          <path d="M 50,332 Q 130,330 207,322 Q 267,310 295,392 Q 360,388 411,384"
+                fill="none" stroke="#d9cfba" stroke-width="1.5" stroke-dasharray="4 4"/>
+
+          <!-- Actual walking route (hotel → stops 1..9) -->
+          <polyline points="562.7,50 50,331.5 207,320.4 206.3,327.6 267.7,298.8 266.9,332.7 295.4,392.1 411.4,384.2 151.1,402.7 61.3,410"
+                    fill="none" stroke="#b8421e" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+
+          <!-- Hotel marker (star) -->
+          <g transform="translate(562.7,50)">
+            <circle r="14" fill="#1c1a17"/>
+            <text y="5" text-anchor="middle" fill="#f7f3ec" font-size="14" font-weight="700">★</text>
+            <text y="-22" text-anchor="middle" fill="#1c1a17" font-size="12" font-weight="600" font-family="ui-sans-serif,system-ui,sans-serif">Hotel</text>
+          </g>
+
+          <!-- Numbered stops -->
+          <g font-family="ui-sans-serif,system-ui,sans-serif" font-size="11" font-weight="700" fill="#fff">
+            <g transform="translate(50,331.5)"><circle r="13" fill="#b8421e"/><text y="4" text-anchor="middle">1</text></g>
+            <g transform="translate(207,320.4)"><circle r="13" fill="#b8421e"/><text y="4" text-anchor="middle">2</text></g>
+            <g transform="translate(206.3,327.6)"><circle r="13" fill="#b8421e"/><text y="4" text-anchor="middle">3</text></g>
+            <g transform="translate(267.7,298.8)"><circle r="13" fill="#b8421e"/><text y="4" text-anchor="middle">4</text></g>
+            <g transform="translate(266.9,332.7)"><circle r="13" fill="#b8421e"/><text y="4" text-anchor="middle">5</text></g>
+            <g transform="translate(295.4,392.1)"><circle r="13" fill="#b8421e"/><text y="4" text-anchor="middle">6</text></g>
+            <g transform="translate(411.4,384.2)"><circle r="13" fill="#b8421e"/><text y="4" text-anchor="middle">7</text></g>
+            <g transform="translate(151.1,402.7)"><circle r="13" fill="#5c3a6b"/><text y="4" text-anchor="middle">8</text></g>
+            <g transform="translate(61.3,410)"><circle r="13" fill="#5c3a6b"/><text y="4" text-anchor="middle">9</text></g>
+          </g>
+
+          <!-- Stop labels (only sparse-area stops; dense cluster 2-5 get their labels in the legend below) -->
+          <g font-family="ui-sans-serif,system-ui,sans-serif" font-size="11" fill="#1c1a17">
+            <text x="68"  y="328" font-weight="600">Edinburgh Castle</text>
+            <text x="428" y="380" font-weight="600">Nat. Museum</text>
+            <text x="168" y="398" font-weight="600">The Vennel</text>
+            <text x="78"  y="412" font-weight="600">Armchair Books</text>
+          </g>
+
+          <!-- North arrow -->
+          <g transform="translate(670,40)" font-family="ui-sans-serif,system-ui,sans-serif" font-size="11" fill="#7a7064">
+            <line x1="0" y1="14" x2="0" y2="-14" stroke="#7a7064" stroke-width="1"/>
+            <polygon points="0,-18 -5,-6 5,-6" fill="#7a7064"/>
+            <text y="28" text-anchor="middle">N</text>
+          </g>
+        </svg>
+        <figcaption class="map__legend">
+          <ol class="map__legend-list">
+            <li><span class="num">1</span> Edinburgh Castle</li>
+            <li><span class="num">2</span> Camera Obscura</li>
+            <li><span class="num">3</span> The Witchery</li>
+            <li><span class="num">4</span> Writers' Museum</li>
+            <li><span class="num">5</span> Victoria Street</li>
+            <li><span class="num">6</span> Greyfriars Kirkyard</li>
+            <li><span class="num">7</span> National Museum of Scotland</li>
+            <li><span class="num num--evening">8</span> The Vennel Viewpoint</li>
+            <li><span class="num num--evening">9</span> Armchair Books</li>
+          </ol>
+        </figcaption>
+      </figure>
+    </section>
+
     <!-- LAYOUT 1: Single vertical scroll -->
     <section id="layout-scroll" class="layout layout--scroll is-active" aria-label="Stops in vertical order">
       <ol class="stops-scroll">
+        <li class="stop-block" data-block="pre">
+          <h2 class="stop-block__time">9:13 AM <span class="stop-block__chip">From your hotel</span></h2>
+          <article class="stop stop--hotel">
+            <header class="stop__head">
+              <span class="stop__num">★</span>
+              <div class="stop__title">
+                <h3>Courtyard by Marriott Edinburgh</h3>
+                <p class="stop__meta">
+                  <span class="rating">Your stay</span>
+                  <span class="reviews"></span>
+                  <span class="dot">·</span>
+                  <span class="kind">1–3 Baxter’s Place</span>
+                </p>
+              </div>
+            </header>
+            <p class="stop__body">Leave by 9:13 to make the 9:30 Castle slot. Walk west on Princes Street, turn up The Mound — the Castle esplanade is at the top. ~17 min on foot.</p>
+          </article>
+        </li>
+
         <li class="stop-block" data-block="morning">
           <h2 class="stop-block__time">9:30 AM <span class="stop-block__chip">Morning</span></h2>
           <article class="stop stop--lead">
@@ -202,6 +304,25 @@
             <p class="stop__body">Secondhand stacks to the ceiling, open until 6:30. Check the vintage shelves at the back. Dinner after in the Grassmarket, right below you.</p>
           </article>
         </li>
+
+        <li class="stop-block" data-block="post">
+          <h2 class="stop-block__time">7:00 PM <span class="stop-block__chip">Back to base</span></h2>
+          <article class="stop stop--hotel">
+            <header class="stop__head">
+              <span class="stop__num">⌂</span>
+              <div class="stop__title">
+                <h3>Courtyard by Marriott Edinburgh</h3>
+                <p class="stop__meta">
+                  <span class="rating">Return</span>
+                  <span class="reviews"></span>
+                  <span class="dot">·</span>
+                  <span class="kind">~18 min uphill</span>
+                </p>
+              </div>
+            </header>
+            <p class="stop__body">Grassmarket → up George IV Bridge → North Bridge → short walk to Baxter’s Place. Or grab a black cab from the Grassmarket rank and be back in 5.</p>
+          </article>
+        </li>
       </ol>
     </section>
 
@@ -209,6 +330,19 @@
     <section id="layout-timeline" class="layout layout--timeline" aria-label="Stops on a timeline" hidden>
       <div class="timeline">
         <div class="timeline__rail" aria-hidden="true"></div>
+
+        <article class="card card--hotel" data-block="pre">
+          <div class="card__time">
+            <span class="card__num">★</span>
+            <span class="card__clock">9:13 AM</span>
+          </div>
+          <div class="card__body">
+            <p class="card__block">From your hotel</p>
+            <h3>Courtyard by Marriott Edinburgh</h3>
+            <p class="card__meta"><span class="rating">Your stay</span> · <span class="kind">1–3 Baxter’s Place</span></p>
+            <p class="card__copy">Leave by 9:13 to make the 9:30 Castle slot. Walk west on Princes Street, turn up The Mound — the Castle esplanade is at the top. ~17 min on foot.</p>
+          </div>
+        </article>
 
         <article class="card" data-block="morning">
           <div class="card__time">
@@ -324,6 +458,19 @@
             <h3>Armchair Books</h3>
             <p class="card__meta"><span class="rating">★ 4.7</span> <span class="reviews">(1,467)</span> · <span class="kind">Bookshop</span></p>
             <p class="card__copy">Secondhand stacks to the ceiling, open until 6:30. Check the vintage shelves at the back. Dinner after in the Grassmarket, right below you.</p>
+          </div>
+        </article>
+
+        <article class="card card--hotel" data-block="post">
+          <div class="card__time">
+            <span class="card__num">⌂</span>
+            <span class="card__clock">7:00 PM</span>
+          </div>
+          <div class="card__body">
+            <p class="card__block">Back to base</p>
+            <h3>Courtyard by Marriott Edinburgh</h3>
+            <p class="card__meta"><span class="rating">Return</span> · <span class="kind">~18 min uphill</span></p>
+            <p class="card__copy">Grassmarket → up George IV Bridge → North Bridge → short walk to Baxter’s Place. Or grab a black cab from the Grassmarket rank and be back in 5.</p>
           </div>
         </article>
       </div>
