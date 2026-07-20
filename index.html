@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Edinburgh — Two Walking Loops</title>
-<meta name="description" content="A two-day walking itinerary for Edinburgh: Old Town castle-to-kirkyard, then Stockbridge, New Town and Calton Hill.">
+<meta name="description" content="A two-day walking itinerary for Edinburgh: Old Town castle-to-kirkyard on day one (afternoon, golden-hour finish), then Dean Village, Stockbridge and a Johnnie Walker rooftop sunset on day two.">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,600;9..144,700&family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500;600&display=swap" rel="stylesheet">
@@ -29,6 +29,7 @@
     font-family:"IBM Plex Sans",system-ui,sans-serif;
     font-size:16px;line-height:1.55;
     -webkit-font-smoothing:antialiased;
+    overflow-x:hidden;
   }
   a{color:var(--heather)}
   a:focus-visible,button:focus-visible{outline:2px solid var(--heather);outline-offset:2px}
@@ -54,10 +55,11 @@
   }
   h1 em{font-style:italic;font-weight:400;color:var(--heather)}
   .lede{max-width:56ch;color:var(--ink-soft)}
+  @media (max-width:820px){.lede{max-width:none}}
 
   /* ---------- map ---------- */
   #map{
-    height:min(62vh,520px);
+    height:min(31vh,260px);
     border:1px solid var(--ink);
     border-top:none;
     background:var(--stone-deep);
@@ -79,7 +81,7 @@
   }
   @media (max-width:820px){.days{grid-template-columns:1fr;gap:36px}}
 
-  .day-head{border-bottom:2px solid var(--ink);padding-bottom:10px;margin-bottom:4px}
+  .day-head{border-bottom:2px solid var(--ink);padding:0 16px 10px;margin-bottom:4px}
   .day-num{
     font-family:"IBM Plex Mono",monospace;font-size:12px;letter-spacing:.14em;text-transform:uppercase;
   }
@@ -87,18 +89,60 @@
   .day-num.d2{color:var(--gorse)}
   h2{font-family:"Fraunces",serif;font-weight:600;font-size:1.55rem;line-height:1.15;margin-top:4px}
   .day-note{font-size:.92rem;color:var(--ink-soft);margin-top:6px}
+  .reset-times{
+    display:inline-block;margin-top:8px;
+    font-family:"IBM Plex Mono",monospace;font-size:.7rem;
+    letter-spacing:.1em;text-transform:uppercase;
+    color:var(--ink-soft);background:none;border:none;
+    border-bottom:1px solid var(--rule);
+    padding:0 0 2px;cursor:pointer;
+  }
+  .reset-times:hover{color:var(--ink);border-bottom-color:var(--ink)}
 
   /* the timetable spine */
   .stop{
     display:grid;grid-template-columns:74px 1fr;gap:14px;
-    padding:16px 0;border-bottom:1px solid var(--rule);
-    cursor:pointer;
+    padding:16px 16px 16px 16px;
+    border-bottom:1px solid var(--rule);
+    cursor:grab;
+    position:relative;
+    transition:background-color .12s;
+  }
+  .stop:active{cursor:grabbing}
+  .stop.drag-over{
+    background:var(--paper);
+    box-shadow:inset 0 3px 0 var(--heather), inset 0 -3px 0 var(--heather);
+  }
+  .stop.dragging{opacity:.4}
+  .stop .drag-handle{
+    position:absolute;
+    left:-2px;top:50%;transform:translateY(-50%);
+    width:4px;height:32px;
+    color:var(--rule);
+    font-family:"IBM Plex Mono",monospace;font-size:14px;
+    display:flex;align-items:center;justify-content:center;
+    user-select:none;
+    pointer-events:none;
   }
   .stop:hover .stop-name, .stop:focus-within .stop-name{color:var(--heather)}
   .stop-time{
     font-family:"IBM Plex Mono",monospace;font-size:.82rem;font-weight:500;
     padding-top:3px;white-space:nowrap;
+    cursor:text;
+    border-bottom:1px dotted transparent;
+    transition:border-color .15s;
   }
+  .stop-time:hover{border-bottom-color:var(--rule)}
+  .stop-time-input{
+    font-family:"IBM Plex Mono",monospace;font-size:.82rem;font-weight:500;
+    padding:2px 4px;
+    border:1px solid var(--ink);
+    background:var(--paper);
+    color:var(--ink);
+    border-radius:2px;
+    width:90px;
+  }
+  .stop-time-input:focus{outline:2px solid var(--heather);outline-offset:1px}
   .stop-name{
     font-family:"Fraunces",serif;font-weight:600;font-size:1.08rem;line-height:1.25;
     transition:color .15s;
@@ -112,6 +156,39 @@
     font-family:"IBM Plex Mono",monospace;font-size:.66rem;letter-spacing:.1em;text-transform:uppercase;
     color:var(--paper);background:var(--ink);padding:2px 7px;border-radius:2px;
     vertical-align:2px;
+  }
+
+  /* hotel bookends (pre-day / post-day) */
+  .pre-day, .post-day{
+    background:var(--paper);
+    border-left:3px solid var(--ink);
+    padding:14px 16px;
+    margin:8px 0 6px;
+  }
+  .post-day{margin-top:14px}
+  .pre-tag, .post-tag{
+    display:block;
+    font-family:"IBM Plex Mono",monospace;font-size:.7rem;
+    letter-spacing:.12em;text-transform:uppercase;
+    color:var(--ink-soft);margin-bottom:6px;
+  }
+  .pre-name, .post-name{
+    display:block;
+    font-family:"Fraunces",serif;font-weight:600;font-size:1.02rem;line-height:1.2;
+  }
+  .pre-addr, .post-addr{
+    display:block;
+    font-size:.82rem;color:var(--ink-soft);margin-top:2px;
+  }
+  .pre-time, .post-time{
+    display:inline-block;
+    font-family:"IBM Plex Mono",monospace;font-size:.76rem;font-weight:500;
+    color:var(--ink);
+    margin-top:8px;margin-right:10px;
+  }
+  .pre-walk, .post-walk{
+    display:inline;
+    font-size:.82rem;color:var(--ink-soft);font-style:italic;
   }
 
   /* ---------- booking + footer ---------- */
@@ -139,6 +216,13 @@
   }
   .pin.d1{background:var(--heather)}
   .pin.d2{background:var(--gorse)}
+  .pin.hotel{
+    width:34px;height:34px;border-radius:8px;
+    background:var(--ink);color:var(--paper);
+    font-size:18px;line-height:1;
+    border:2px solid var(--paper);
+    filter:sepia(0.7);
+  }
   .leaflet-popup-content{font-family:"IBM Plex Sans",sans-serif;font-size:13px}
   .leaflet-popup-content strong{font-family:"Fraunces",serif;font-size:14px}
 </style>
@@ -148,8 +232,8 @@
 <header>
   <div class="wrap">
     <div class="eyebrow">Edinburgh &middot; Two days on foot &middot; ~4–5 mi per day</div>
-    <h1>Castle, kirkyard, <em>and the quiet side of town</em></h1>
-    <p class="lede">Two walking loops that follow the city's actual geography: Old Town top-to-bottom on day one, then Dean Village, Stockbridge and Calton Hill on day two. Tap any stop to find it on the map.</p>
+    <h1>Edinburgh <em>in two walks</em></h1>
+    <p class="lede">Two loops that follow the city's actual geography: Old Town top-to-bottom on day one (afternoon, golden-hour finish at The Vennel), then Dean Village, Stockbridge and a west-facing castle sunset from the Johnnie Walker rooftop on day two. Click any time to edit it, or drag stops between days to build your own route — the map redraws as you go.</p>
   </div>
 </header>
 
@@ -157,7 +241,7 @@
   <div id="map" role="region" aria-label="Map of itinerary stops"></div>
   <div class="map-key">
     <span><span class="key-dot d1"></span>Day 1 — Old Town</span>
-    <span><span class="key-dot d2"></span>Day 2 — Stockbridge &amp; Calton Hill</span>
+    <span><span class="key-dot d2"></span>Day 2 &mdash; Stockbridge &amp; rooftop sunset</span>
   </div>
 </div>
 
@@ -166,19 +250,49 @@
   <section aria-labelledby="d1h">
     <div class="day-head">
       <div class="day-num d1">Day 01 / Old Town</div>
-      <h2 id="d1h">Castle to Kirkyard</h2>
-      <p class="day-note">Start at the top of the Royal Mile and work downhill. Every stop is within 15 minutes of the last.</p>
+      <h2 id="d1h">Afternoon landing &rarr; golden hour</h2>
+      <p class="day-note">Noon plane. Five stops, one dinner, and The Vennel at 8 PM for the low sun on the castle.</p>
+      <button class="reset-times" data-day="1" type="button">&larr; Reset itinerary</button>
     </div>
+    <p class="pre-day">
+      <span class="pre-tag">FROM YOUR HOTEL</span>
+      <span class="pre-name">Courtyard by Marriott Edinburgh</span>
+      <span class="pre-addr">1&ndash;3 Baxter&rsquo;s Place, Edinburgh EH1 3AF</span>
+      <span class="pre-time">1:30 PM</span>
+      <span class="pre-walk">~17 min walk via Princes St &amp; The Mound.</span>
+    </p>
     <div id="day1-list"></div>
+    <p class="post-day">
+      <span class="post-tag">BACK TO BASE</span>
+      <span class="post-name">Courtyard by Marriott Edinburgh</span>
+      <span class="post-addr">1&ndash;3 Baxter&rsquo;s Place, Edinburgh EH1 3AF</span>
+      <span class="post-time">9:00 PM</span>
+      <span class="post-walk">~18 min walk up via George IV Bridge &amp; North Bridge.</span>
+    </p>
   </section>
 
   <section aria-labelledby="d2h">
     <div class="day-head">
       <div class="day-num d2">Day 02 / North &amp; East</div>
-      <h2 id="d2h">Stockbridge, New Town &amp; Calton Hill</h2>
-      <p class="day-note">The quieter, prettier loop. Beat the crowds to Dean Village, brunch in Stockbridge, end on Calton Hill for sunset.</p>
+      <h2 id="d2h">Stockbridge, New Town &amp; sunset at the rooftop</h2>
+      <p class="day-note">The quieter, prettier loop. Dean Village at 9, brunch in Stockbridge, then a long afternoon pause. Sunset is the closer &mdash; straight-on castle views from the Johnnie Walker rooftop.</p>
+      <button class="reset-times" data-day="2" type="button">&larr; Reset itinerary</button>
     </div>
+    <p class="pre-day">
+      <span class="pre-tag">FROM YOUR HOTEL</span>
+      <span class="pre-name">Courtyard by Marriott Edinburgh</span>
+      <span class="pre-addr">1&ndash;3 Baxter&rsquo;s Place, Edinburgh EH1 3AF</span>
+      <span class="pre-time">8:32 AM</span>
+      <span class="pre-walk">~28 min walk via York Pl &amp; Randolph Cliff.</span>
+    </p>
     <div id="day2-list"></div>
+    <p class="post-day">
+      <span class="post-tag">BACK TO BASE</span>
+      <span class="post-name">Courtyard by Marriott Edinburgh</span>
+      <span class="post-addr">1&ndash;3 Baxter&rsquo;s Place, Edinburgh EH1 3AF</span>
+      <span class="post-time">9:30 PM</span>
+      <span class="post-walk">~10 min walk down Princes St.</span>
+    </p>
   </section>
 
 </div>
@@ -186,74 +300,114 @@
 <div class="wrap">
   <div class="booking">
     <h3>Book these before you go</h3>
-    <p><strong>Edinburgh Castle</strong> — timed entry sells out; take the first slot of the day. <a href="https://www.edinburghcastle.scot/tickets" target="_blank" rel="noopener">edinburghcastle.scot/tickets</a></p>
-    <p><strong>The Witchery</strong> — the set lunch (~£30, two courses) is the affordable way in; note the strict cancellation fee. <a href="https://www.thewitchery.com" target="_blank" rel="noopener">thewitchery.com</a></p>
-    <p><strong>The Chocolatarium</strong> — the 90-minute tour where you make your own bar. <a href="https://www.chocolatarium.co.uk" target="_blank" rel="noopener">chocolatarium.co.uk</a></p>
+    <p><strong>Edinburgh Castle</strong> &mdash; timed entry sells out; the 2 PM Friday slot lands perfectly after your noon landing. <a href="https://www.edinburghcastle.scot/tickets" target="_blank" rel="noopener">edinburghcastle.scot/tickets</a></p>
+    <p><strong>The Witchery</strong> &mdash; book the 6:30 PM seating to be out by 7:45 with time to walk to The Vennel for golden hour. <a href="https://www.thewitchery.com" target="_blank" rel="noopener">thewitchery.com</a></p>
+    <p><strong>The Chocolatarium</strong> &mdash; book the 3:30 PM Saturday tour; pairs with the 7:30 PM Johnnie Walker sunset. <a href="https://www.chocolatarium.co.uk" target="_blank" rel="noopener">chocolatarium.co.uk</a></p>
   </div>
 </div>
 
 <footer>
-  <div class="wrap">In July the sun sets after 9:30 PM — the evening is longer than the schedule suggests. &middot; Optional add-on: Arthur's Seat at sunrise (2 hrs, real elevation).</div>
+  <div class="wrap">Day 1 anchored on the Vennel at 8 PM &mdash; if clouds roll in, the 7:30 PM Witchery patio catches the light instead. &middot; Day 2: west-facing sunset on the Johnnie Walker rooftop is the closer; if the weather's bad, swap to Calton Hill and call it at 5:30.</div>
 </footer>
 
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
 <script>
-const DAY1 = [
-  {t:"9:30 AM", n:"Edinburgh Castle", must:true, lat:55.9485947, lng:-3.1999135,
-   note:"Book the first timed slot — crowds double by 11. Budget two hours; the 1 PM gun fires if you run long.",
+/* ---------- DATA ---------- */
+// Each stop has a stable id, default day, and default time. User edits
+// only mutate `state` (days + times); the original defs are read-only.
+const DEFS = [
+  {id:'c1', defaultDay:1, defaultT:'2:00 PM',  n:'Edinburgh Castle', must:true,  lat:55.9485947, lng:-3.1999135,
+   note:"Book the first afternoon timed slot (~2 PM) — last entry is 5 PM. Budget two hours; the 1 PM gun fires if you run long.",
    map:"https://maps.google.com/?cid=5087412727581510232", site:"https://www.edinburghcastle.scot"},
-  {t:"11:45 AM", n:"Camera Obscura & World of Illusions", lat:55.9489544, lng:-3.1956707,
-   note:"Two doors down the esplanade. Do the rooftop and the Victorian camera tour; skip floors if short on time.",
+  {id:'c2', defaultDay:1, defaultT:'4:00 PM',  n:'Camera Obscura & World of Illusions', must:false, lat:55.9489544, lng:-3.1956707,
+   note:"Two doors down the esplanade. Closes ~7 PM — pick the rooftop and the Victorian camera tour.",
    map:"https://maps.google.com/?cid=16142815702660895607", site:"https://www.camera-obscura.co.uk"},
-  {t:"1:00 PM", n:"Lunch — The Witchery", must:true, lat:55.9487885, lng:-3.1956276,
-   note:"Set lunch is the value play: two courses around £30. Book well ahead.",
-   map:"https://maps.google.com/?cid=1954964039509368811", site:"https://www.thewitchery.com"},
-  {t:"2:30 PM", n:"The Writers' Museum", lat:55.949708, lng:-3.1937388,
-   note:"Free, 30–45 min. The entrance in Lady Stair's Close is easy to walk past — watch for it.",
-   map:"https://maps.google.com/?cid=7898657216517477187", site:"https://cultureedinburgh.com/our-venues/writers-museum"},
-  {t:"3:15 PM", n:"Victoria Street", lat:55.9487342, lng:-3.1931981,
-   note:"The curved 'Diagon Alley' street. Walk the upper terrace level too — better photos, fewer people.",
-   map:"https://maps.google.com/?cid=9041591883893928563"},
-  {t:"3:45 PM", n:"Greyfriars Kirkyard", lat:55.946674, lng:-3.1921255,
+  {id:'c3', defaultDay:1, defaultT:'5:15 PM',  n:'Greyfriars Kirkyard', must:false, lat:55.946674, lng:-3.1921255,
    note:"Thomas Riddell's grave sits along the back wall path near the Flodden Wall gate. Free, open 24 hours.",
    map:"https://maps.google.com/?cid=16235620236844633223", site:"https://greyfriarskirk.com/visit/kirkyard/"},
-  {t:"4:15 PM", n:"National Museum of Scotland", lat:55.9469995, lng:-3.1905666,
-   note:"Free. ~45 min before close: Grand Gallery, Dolly the Sheep, rooftop terrace. Return another day for the full three hours if it grabs you.",
-   map:"https://maps.google.com/?cid=9857296582318142915", site:"https://www.nms.ac.uk/national-museum-of-scotland/"},
-  {t:"5:15 PM", n:"The Vennel Viewpoint", lat:55.946443, lng:-3.197256,
-   note:"Best castle photo in the city, framed by stone steps. Golden hour is the move.",
-   map:"https://maps.google.com/?cid=12807116292195762213"},
-  {t:"5:30 PM", n:"Armchair Books", lat:55.946324, lng:-3.200031,
-   note:"Secondhand stacks to the ceiling, open until 6:30. Check the vintage shelves at the back — then dinner in the Grassmarket below.",
-   map:"https://maps.google.com/?cid=12693524302604863410", site:"http://www.armchairbooks.co.uk"}
-];
-const DAY2 = [
-  {t:"9:00 AM", n:"Dean Village", must:true, lat:55.9522, lng:-3.2190,
+  {id:'c4', defaultDay:1, defaultT:'6:00 PM',  n:'Victoria Street', must:false, lat:55.9487342, lng:-3.1931981,
+   note:"The curved 'Diagon Alley' street. Walk the upper terrace level too — better photos, fewer people.",
+   map:"https://maps.google.com/?cid=9041591883893928563", site:null},
+  {id:'c5', defaultDay:1, defaultT:'6:30 PM',  n:'Dinner — The Witchery', must:true, lat:55.9487885, lng:-3.1956276,
+   note:"Reservation around 6:30 puts you out by 7:45. Book well ahead; the strict cancellation fee is real.",
+   map:"https://maps.google.com/?cid=1954964039509368811", site:"https://www.thewitchery.com"},
+  {id:'c6', defaultDay:1, defaultT:'8:00 PM',  n:'The Vennel Viewpoint', must:false, lat:55.946443, lng:-3.197256,
+   note:"Golden hour target. The south-facing stone steps frame Edinburgh Castle with the low sun behind it — get here by 7:50 to set up. Best light runs ~8:00–8:45 PM in July.",
+   map:"https://maps.google.com/?cid=12807116292195762213", site:null},
+  {id:'c7', defaultDay:2, defaultT:'9:00 AM',  n:'Dean Village', must:true, lat:55.9522, lng:-3.2190,
    note:"Go before 10 — it's tiny and fills with photographers fast. Leave along the Water of Leith path toward Stockbridge: the best 15 minutes of the day.",
-   map:"https://www.google.com/maps/search/?api=1&query=Dean+Village+Edinburgh"},
-  {t:"10:00 AM", n:"Circus Lane", lat:55.9581071, lng:-3.2050802,
+   map:"https://www.google.com/maps/search/?api=1&query=Dean+Village+Edinburgh", site:null},
+  {id:'c8', defaultDay:2, defaultT:'10:00 AM', n:'Circus Lane', must:false, lat:55.9581071, lng:-3.2050802,
    note:"Five-minute photo stop. The mews with St Stephen's clock tower behind it is the shot.",
-   map:"https://maps.google.com/?cid=2509812258059114292"},
-  {t:"10:15 AM", n:"Brunch — The Pantry", lat:55.9572035, lng:-3.2056372,
+   map:"https://maps.google.com/?cid=2509812258059114292", site:null},
+  {id:'c9', defaultDay:2, defaultT:'10:15 AM', n:'Brunch — The Pantry', must:false, lat:55.9572035, lng:-3.2056372,
    note:"Around the corner from Circus Lane. Expect a short weekend wait; the haggis fry-up earns it.",
    map:"https://maps.google.com/?cid=419157568579004307", site:"http://www.thepantryedinburgh.co.uk"},
-  {t:"11:45 AM", n:"Scottish National Portrait Gallery", lat:55.9554998, lng:-3.1935213,
+  {id:'c10',defaultDay:2, defaultT:'11:45 AM', n:'Scottish National Portrait Gallery', must:false, lat:55.9554998, lng:-3.1935213,
    note:"Free. The neo-Gothic Great Hall alone justifies the stop. 60–90 minutes.",
    map:"https://maps.google.com/?cid=3162451449492144006", site:"https://www.nationalgalleries.org/visit/scottish-national-portrait-gallery"},
-  {t:"1:30 PM", n:"Scott Monument & Princes Street Gardens", lat:55.952381, lng:-3.1932741,
+  {id:'c11',defaultDay:2, defaultT:'1:30 PM',  n:'Scott Monument & Princes Street Gardens', must:false, lat:55.952381, lng:-3.1932741,
    note:"Climb the 287 steps if you want the workout, or walk the gardens beneath with the castle looming above.",
    map:"https://maps.google.com/?cid=16827017315051771683", site:"https://www.edinburghmuseums.org.uk/venue/scott-monument/"},
-  {t:"2:15 PM", n:"1820 Rooftop Bar at Johnnie Walker", lat:55.9504694, lng:-3.2076533,
-   note:"West end of Princes Street. Straight-on castle views with a drink; the full Johnnie Walker Experience downstairs takes 90 min if you have them.",
-   map:"https://maps.google.com/?cid=569368434008832867", site:"https://www.johnniewalker.com/en-gb/visit-us-princes-street/"},
-  {t:"3:30 PM", n:"The Chocolatarium", must:true, lat:55.9508746, lng:-3.184016,
-   note:"Book the 90-minute tour ahead — you make your own bar to take home. Perfectly positioned for Calton Hill after.",
+  {id:'c12',defaultDay:2, defaultT:'3:30 PM',  n:'The Chocolatarium', must:true, lat:55.9508746, lng:-3.184016,
+   note:"Book the 3:30 PM tour — you make your own bar to take home, then walk Princes Street back west to the Johnnie Walker rooftop for sunset.",
    map:"https://maps.google.com/?cid=7896779718380057269", site:"https://www.chocolatarium.co.uk"},
-  {t:"5:30 PM", n:"Calton Hill", lat:55.9550465, lng:-3.1827409,
-   note:"Ten-minute climb, best sunset panorama in the city — castle, Arthur's Seat and the Firth of Forth in one sweep.",
-   map:"https://maps.google.com/?cid=10484861952257910493"}
+  {id:'c13',defaultDay:2, defaultT:'7:30 PM',  n:'Sunset — 1820 Rooftop Bar at Johnnie Walker', must:false, lat:55.9504694, lng:-3.2076533,
+   note:"West end of Princes Street. Book ahead — the rooftop is small and the 7:30 slot is the best light. Direct west-facing castle view from the terrace; last food orders ~8:30 PM.",
+   map:"https://maps.google.com/?cid=569368434008832867", site:"https://www.johnniewalker.com/en-gb/visit-us-princes-street/"}
 ];
+const DEFS_BY_ID = Object.fromEntries(DEFS.map(d => [d.id, d]));
+const STORAGE_KEY = 'edinburgh-state-v1';
 
+function defaultState(){
+  return {
+    days: { 1: DEFS.filter(d => d.defaultDay===1).map(d => d.id),
+            2: DEFS.filter(d => d.defaultDay===2).map(d => d.id) },
+    times: {}
+  };
+}
+function loadState(){
+  try {
+    const raw = localStorage.getItem(STORAGE_KEY);
+    if (!raw) return defaultState();
+    const parsed = JSON.parse(raw);
+    if (!parsed || !parsed.days || !parsed.times) return defaultState();
+    // Defensive: filter out any ids that aren't in DEFS
+    const validIds = new Set(DEFS.map(d => d.id));
+    parsed.days[1] = (parsed.days[1] || []).filter(id => validIds.has(id));
+    parsed.days[2] = (parsed.days[2] || []).filter(id => validIds.has(id));
+    // Re-add any DEFS that got dropped (e.g. localStorage from older version)
+    DEFS.forEach(d => {
+      if (!parsed.days[d.defaultDay].includes(d.id)) parsed.days[d.defaultDay].push(d.id);
+    });
+    Object.keys(parsed.times).forEach(id => { if (!validIds.has(id)) delete parsed.times[id]; });
+    return parsed;
+  } catch(_) { return defaultState(); }
+}
+function saveState(){
+  try { localStorage.setItem(STORAGE_KEY, JSON.stringify(state)); } catch(_) {}
+}
+
+/* ---------- TIME PARSING ---------- */
+function parseTimeToMins(str){
+  const m = str.match(/^(\d{1,2}):(\d{2})\s*(AM|PM)$/i);
+  if (!m) return 9999;
+  let h = parseInt(m[1], 10);
+  const min = parseInt(m[2], 10);
+  const ap = m[3].toUpperCase();
+  if (ap === 'PM' && h !== 12) h += 12;
+  if (ap === 'AM' && h === 12) h = 0;
+  return h * 60 + min;
+}
+function minsToTime(mins){
+  const h24 = Math.floor(mins / 60) % 24;
+  const m = mins % 60;
+  const ampm = h24 >= 12 ? 'PM' : 'AM';
+  let h12 = h24 % 12; if (h12 === 0) h12 = 12;
+  return `${h12}:${String(m).padStart(2,'0')} ${ampm}`;
+}
+
+/* ---------- MAP ---------- */
 const reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 const map = L.map('map', {scrollWheelZoom:false});
 L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', {
@@ -261,49 +415,272 @@ L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', {
   maxZoom:19
 }).addTo(map);
 
-const markers = [];
-function build(day, cls, listId, color){
-  const list = document.getElementById(listId);
-  const latlngs = [];
-  day.forEach((s, i) => {
-    latlngs.push([s.lat, s.lng]);
-    const icon = L.divIcon({className:'', html:`<div class="pin ${cls}">${i+1}</div>`, iconSize:[26,26], iconAnchor:[13,13]});
-    const m = L.marker([s.lat, s.lng], {icon}).addTo(map)
-      .bindPopup(`<strong>${i+1}. ${s.n}</strong><br>${s.t}<br><a href="${s.map}" target="_blank" rel="noopener">Open in Google Maps</a>`);
-    markers.push(m);
-
-    const el = document.createElement('div');
-    el.className = 'stop';
-    el.setAttribute('tabindex','0');
-    el.setAttribute('role','button');
-    el.setAttribute('aria-label', `${s.n}, ${s.t}. Show on map.`);
-    el.innerHTML = `
-      <div class="stop-time">${s.t}</div>
-      <div>
-        <div class="stop-name">${i+1}. ${s.n}${s.must ? '<span class="must">Book ahead</span>' : ''}</div>
-        <div class="stop-note">${s.note}</div>
-        <div class="stop-links">
-          <a href="${s.map}" target="_blank" rel="noopener">Maps ↗</a>
-          ${s.site ? `<a href="${s.site}" target="_blank" rel="noopener">Website ↗</a>` : ''}
-        </div>
-      </div>`;
-    const go = (e) => {
-      if (e.target.closest('a')) return;
-      const z = Math.max(map.getZoom(), 16);
-      reduced ? map.setView([s.lat, s.lng], z) : map.flyTo([s.lat, s.lng], z, {duration:.6});
-      m.openPopup();
-      document.getElementById('map').scrollIntoView({behavior: reduced ? 'auto' : 'smooth', block:'nearest'});
-    };
-    el.addEventListener('click', go);
-    el.addEventListener('keydown', (e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); go(e); } });
-    list.appendChild(el);
-  });
-  L.polyline(latlngs, {color, weight:3, opacity:.55, dashArray:'6 6'}).addTo(map);
+// Map state held in module scope so render() can rebuild it
+let routeLayers = []; // polyline(s) currently on the map
+let stopMarkers = []; // {id, marker}
+function clearMapRoutes(){
+  routeLayers.forEach(l => map.removeLayer(l));
+  routeLayers = [];
+  stopMarkers.forEach(sm => map.removeLayer(sm.marker));
+  stopMarkers = [];
+}
+function addPolyline(coords, color){
+  const line = L.polyline(coords, {color, weight:3, opacity:.55, dashArray:'6 6'}).addTo(map);
+  routeLayers.push(line);
+  return line;
+}
+function addStopMarker(def, label, color){
+  const icon = L.divIcon({className:'', html:`<div class="pin" style="background:${color}">${label}</div>`, iconSize:[26,26], iconAnchor:[13,13]});
+  const t = state.times[def.id] || def.defaultT;
+  const m = L.marker([def.lat, def.lng], {icon}).addTo(map)
+    .bindPopup(`<strong>${label}. ${def.n}</strong><br>${t}<br><a href="${def.map}" target="_blank" rel="noopener">Open in Google Maps</a>`);
+  stopMarkers.push({id: def.id, marker: m});
 }
 
-build(DAY1, 'd1', 'day1-list', '#5d5187');
-build(DAY2, 'd2', 'day2-list', '#9a6b1f');
-map.fitBounds(L.featureGroup(markers).getBounds().pad(0.12));
+// Hotel pin (kept across renders, not in DEFS)
+const HOTEL = [55.9558, -3.1884];
+const hotelIcon = L.divIcon({
+  className:'',
+  html:'<div class="pin hotel" title="Courtyard by Marriott Edinburgh">🏨</div>',
+  iconSize:[34,34], iconAnchor:[17,17]
+});
+let hotelMarker = null;
+
+/* ---------- RENDER ---------- */
+let state; // populated in init()
+
+function render(){
+  // 1) Tear down existing markers + polylines
+  clearMapRoutes();
+
+  // 2) Sort each day by time ascending, then build DOM + markers in that order
+  [1, 2].forEach(day => {
+    const ordered = state.days[day]
+      .map(id => DEFS_BY_ID[id])
+      .sort((a, b) => parseTimeToMins(state.times[a.id] || a.defaultT) - parseTimeToMins(state.times[b.id] || b.defaultT));
+
+    const list = document.getElementById(day === 1 ? 'day1-list' : 'day2-list');
+    list.innerHTML = '';
+    const color = day === 1 ? '#5d5187' : '#9a6b1f';
+
+    const latlngs = [];
+    ordered.forEach((def, i) => {
+      const t = state.times[def.id] || def.defaultT;
+      latlngs.push([def.lat, def.lng]);
+
+      // Map marker
+      addStopMarker(def, i + 1, color);
+
+      // DOM row
+      const el = document.createElement('div');
+      el.className = 'stop';
+      el.draggable = true;
+      el.dataset.id = def.id;
+      el.dataset.day = day;
+      el.setAttribute('tabindex','0');
+      el.setAttribute('role','button');
+      el.setAttribute('aria-label', `${def.n}, ${t}. Drag to reorder or click to view on map.`);
+      el.setAttribute('aria-grabbed','false');
+
+      const handle = document.createElement('span');
+      handle.className = 'drag-handle';
+      handle.setAttribute('aria-hidden','true');
+      handle.textContent = '⋮⋮';
+
+      const timeCell = document.createElement('div');
+      timeCell.className = 'stop-time';
+      timeCell.textContent = t;
+      timeCell.title = 'Click to edit time';
+      timeCell.setAttribute('role','textbox');
+      timeCell.setAttribute('aria-label', `Time for ${def.n}, currently ${t}. Click to edit.`);
+
+      const details = document.createElement('div');
+      details.innerHTML = `
+        <div class="stop-name">${i+1}. ${def.n}${def.must ? '<span class="must">Book ahead</span>' : ''}</div>
+        <div class="stop-note">${def.note}</div>
+        <div class="stop-links">
+          <a href="${def.map}" target="_blank" rel="noopener">Maps ↗</a>
+          ${def.site ? `<a href="${def.site}" target="_blank" rel="noopener">Website ↗</a>` : ''}
+        </div>`;
+
+      el.appendChild(handle);
+      el.appendChild(timeCell);
+      el.appendChild(details);
+      list.appendChild(el);
+
+      wireStopEvents(el, def, day, timeCell);
+    });
+
+    // Polyline for this day (drawn in current time-sorted order)
+    if (latlngs.length) addPolyline(latlngs, color);
+  });
+
+  // 3) Hotel marker — stable across renders
+  if (!hotelMarker) {
+    hotelMarker = L.marker(HOTEL, {icon: hotelIcon, zIndexOffset:-100})
+      .addTo(map)
+      .bindPopup('<strong>Home base</strong><br>Courtyard by Marriott Edinburgh<br>1–3 Baxter&rsquo;s Place, EH1 3AF<br><a href="https://maps.google.com/?q=Courtyard+by+Marriott+Edinburgh+Baxter%27s+Place" target="_blank" rel="noopener">Open in Google Maps</a>');
+  }
+
+  // 4) Fit map to all visible pins
+  const all = [...stopMarkers.map(sm => sm.marker), hotelMarker];
+  map.fitBounds(L.featureGroup(all).getBounds().pad(0.12));
+}
+
+function wireStopEvents(el, def, day, timeCell){
+  /* ---- Click to fly to on map ---- */
+  const go = (e) => {
+    if (e.target.closest('a,input')) return;
+    if (e.target.classList && e.target.classList.contains('stop-time')) return;
+    const sm = stopMarkers.find(x => x.id === def.id);
+    if (!sm) return;
+    const z = Math.max(map.getZoom(), 16);
+    reduced ? map.setView([def.lat, def.lng], z) : map.flyTo([def.lat, def.lng], z, {duration:.6});
+    sm.marker.openPopup();
+    document.getElementById('map').scrollIntoView({behavior: reduced ? 'auto' : 'smooth', block:'nearest'});
+  };
+  el.addEventListener('click', go);
+  el.addEventListener('keydown', (e) => {
+    if (e.target.closest('input')) return;
+    if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); go(e); }
+  });
+
+  /* ---- Click to edit time ---- */
+  const enterEdit = (e) => {
+    if (e.target.closest('a,input')) return;
+    e.stopPropagation();
+    const cur = state.times[def.id] || def.defaultT;
+    const m = cur.match(/^(\d{1,2}):(\d{2})\s*(AM|PM)$/i);
+    if (!m) return;
+    let hh = parseInt(m[1], 10);
+    const mm = m[2];
+    const ap = m[3].toUpperCase();
+    if (ap === 'PM' && hh !== 12) hh += 12;
+    if (ap === 'AM' && hh === 12) hh = 0;
+    const input = document.createElement('input');
+    input.type = 'time';
+    input.className = 'stop-time-input';
+    input.value = String(hh).padStart(2, '0') + ':' + mm;
+    input.setAttribute('aria-label', `Time for ${def.n}`);
+    timeCell.replaceWith(input);
+    input.focus();
+    input.select();
+    // While editing, the row should NOT be draggable, and clicks should not fly-to.
+    el.draggable = false;
+    const restore = () => { el.draggable = true; };
+    const save = () => {
+      const v = input.value;
+      if (!v) { input.replaceWith(timeCell); restore(); return; }
+      const [h2, m2] = v.split(':').map(Number);
+      const ampm = h2 >= 12 ? 'PM' : 'AM';
+      let h12 = h2 % 12; if (h12 === 0) h12 = 12;
+      const newT = `${h12}:${String(m2).padStart(2,'0')} ${ampm}`;
+      state.times[def.id] = newT;
+      timeCell.textContent = newT;
+      input.replaceWith(timeCell);
+      restore();
+      saveState();
+      // Re-render to re-sort and renumber
+      render();
+    };
+    const cancel = () => { input.replaceWith(timeCell); restore(); };
+    input.addEventListener('blur', save);
+    input.addEventListener('keydown', (ev) => {
+      if (ev.key === 'Enter') { ev.preventDefault(); save(); }
+      else if (ev.key === 'Escape') { ev.preventDefault(); cancel(); }
+    });
+  };
+  timeCell.addEventListener('click', enterEdit);
+
+  /* ---- Drag and drop ---- */
+  el.addEventListener('dragstart', (e) => {
+    // Don't initiate drag from interactive elements
+    if (e.target.closest('a,input,button')) { e.preventDefault(); return; }
+    e.dataTransfer.effectAllowed = 'move';
+    e.dataTransfer.setData('text/plain', def.id);
+    el.classList.add('dragging');
+    el.setAttribute('aria-grabbed','true');
+  });
+  el.addEventListener('dragend', () => {
+    el.classList.remove('dragging');
+    el.setAttribute('aria-grabbed','false');
+    document.querySelectorAll('.stop.drag-over').forEach(n => n.classList.remove('drag-over'));
+  });
+  el.addEventListener('dragover', (e) => {
+    // Only accept drops onto rows in a different day-list (cross-day moves)
+    // AND onto the list container itself (for empty end-of-list drops)
+    e.preventDefault();
+    e.dataTransfer.dropEffect = 'move';
+    el.classList.add('drag-over');
+  });
+  el.addEventListener('dragleave', (e) => {
+    // Only clear if the pointer truly left the element
+    if (!el.contains(e.relatedTarget)) el.classList.remove('drag-over');
+  });
+  el.addEventListener('drop', (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    el.classList.remove('drag-over');
+    const draggedId = e.dataTransfer.getData('text/plain');
+    if (!draggedId || draggedId === def.id) return;
+    moveStop(draggedId, day, def.id); // move `draggedId` into `day`, just before `def.id`
+  });
+}
+
+// Also allow dropping at the end of either list (empty space below the last stop)
+function wireListContainer(listId, day){
+  const list = document.getElementById(listId);
+  list.addEventListener('dragover', (e) => {
+    // Only when not over a stop (stops handle their own dragover)
+    if (e.target.closest('.stop')) return;
+    e.preventDefault();
+    e.dataTransfer.dropEffect = 'move';
+  });
+  list.addEventListener('drop', (e) => {
+    if (e.target.closest('.stop')) return;
+    e.preventDefault();
+    const draggedId = e.dataTransfer.getData('text/plain');
+    if (!draggedId) return;
+    moveStop(draggedId, day, null); // append
+  });
+}
+
+function moveStop(id, targetDay, beforeId){
+  const def = DEFS_BY_ID[id];
+  if (!def) return;
+  // Remove from both days (id can only be in one)
+  [1, 2].forEach(d => {
+    state.days[d] = state.days[d].filter(x => x !== id);
+  });
+  if (!beforeId) {
+    state.days[targetDay].push(id);
+  } else {
+    const idx = state.days[targetDay].indexOf(beforeId);
+    if (idx === -1) state.days[targetDay].push(id);
+    else state.days[targetDay].splice(idx, 0, id);
+  }
+  saveState();
+  render();
+}
+
+/* ---------- RESET ---------- */
+function resetAll(){
+  try { localStorage.removeItem(STORAGE_KEY); } catch(_) {}
+  state = defaultState();
+  render();
+}
+document.querySelectorAll('.reset-times').forEach(btn => {
+  btn.addEventListener('click', (e) => {
+    e.preventDefault();
+    resetAll();
+  });
+});
+
+/* ---------- INIT ---------- */
+state = loadState();
+wireListContainer('day1-list', 1);
+wireListContainer('day2-list', 2);
+render();
 </script>
 </body>
 </html>
