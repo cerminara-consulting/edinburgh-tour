@@ -124,6 +124,31 @@
     user-select:none;
     pointer-events:none;
   }
+  .stop.parked{opacity:.65}
+  .stop.parked:hover{opacity:1}
+  .stop.parked .stop-time{cursor:text}
+  .stop.parked .stop-name{color:var(--ink-soft)}
+  .parked-badge{
+    display:inline-block;margin-left:8px;
+    font-family:"IBM Plex Mono",monospace;font-size:.66rem;letter-spacing:.1em;text-transform:uppercase;
+    color:var(--paper);background:var(--ink-soft);padding:2px 7px;border-radius:2px;
+    vertical-align:2px;
+  }
+  .parking-section{
+    border:1px dashed var(--rule);
+    background:rgba(244,241,234,.4);
+    padding:24px 0 8px;
+    margin:32px 0 0;
+  }
+  .parking-section .day-head{border-bottom:1px dashed var(--ink-soft)}
+  .parking-section .day-num{color:var(--ink-soft)}
+  .parking-empty{
+    font-family:"IBM Plex Mono",monospace;font-size:.8rem;color:var(--ink-soft);
+    padding:18px 16px;
+    text-align:center;
+    font-style:italic;
+  }
+  #parking-list{padding-bottom:8px}
   .stop:hover .stop-name, .stop:focus-within .stop-name{color:var(--heather)}
   .stop-time{
     font-family:"IBM Plex Mono",monospace;font-size:.82rem;font-weight:500;
@@ -297,6 +322,18 @@
 
 </div>
 
+<div class="wrap parking-section">
+  <section aria-labelledby="parking-h">
+    <div class="day-head">
+      <div class="day-num">Parking lot</div>
+      <h2 id="parking-h">Stops you&rsquo;re not scheduling right now</h2>
+      <p class="day-note">Drag any stop down here to take it off today&rsquo;s route without losing it. Drag it back up to a day when you&rsquo;re ready to schedule it. Parked stops don&rsquo;t show on the map.</p>
+      <button class="reset-times" data-day="parked" type="button">&larr; Reset itinerary</button>
+    </div>
+    <div id="parking-list"></div>
+  </section>
+</div>
+
 <div class="wrap">
   <div class="booking">
     <h3>Book these before you go</h3>
@@ -357,12 +394,13 @@ const DEFS = [
    map:"https://maps.google.com/?cid=569368434008832867", site:"https://www.johnniewalker.com/en-gb/visit-us-princes-street/"}
 ];
 const DEFS_BY_ID = Object.fromEntries(DEFS.map(d => [d.id, d]));
-const STORAGE_KEY = 'edinburgh-state-v1';
+const STORAGE_KEY = 'edinburgh-state-v2';
 
 function defaultState(){
   return {
     days: { 1: DEFS.filter(d => d.defaultDay===1).map(d => d.id),
-            2: DEFS.filter(d => d.defaultDay===2).map(d => d.id) },
+            2: DEFS.filter(d => d.defaultDay===2).map(d => d.id),
+            parked: [] },
     times: {}
   };
 }
@@ -376,9 +414,12 @@ function loadState(){
     const validIds = new Set(DEFS.map(d => d.id));
     parsed.days[1] = (parsed.days[1] || []).filter(id => validIds.has(id));
     parsed.days[2] = (parsed.days[2] || []).filter(id => validIds.has(id));
-    // Re-add any DEFS that got dropped (e.g. localStorage from older version)
+    parsed.days.parked = (parsed.days.parked || []).filter(id => validIds.has(id));
+    // Re-add any DEFS that got dropped from ALL three lists (e.g. corrupt localStorage)
+    // — but only if the id is missing everywhere, never override a user move.
     DEFS.forEach(d => {
-      if (!parsed.days[d.defaultDay].includes(d.id)) parsed.days[d.defaultDay].push(d.id);
+      const anywhere = parsed.days[1].includes(d.id) || parsed.days[2].includes(d.id) || parsed.days.parked.includes(d.id);
+      if (!anywhere) parsed.days[d.defaultDay].push(d.id);
     });
     Object.keys(parsed.times).forEach(id => { if (!validIds.has(id)) delete parsed.times[id]; });
     return parsed;
@@ -515,6 +556,59 @@ function render(){
     if (latlngs.length) addPolyline(latlngs, color);
   });
 
+  // 2b) Parking lot — no map markers, no polyline, no sort
+  const parkingList = document.getElementById('parking-list');
+  parkingList.innerHTML = '';
+  if (!state.days.parked.length) {
+    const empty = document.createElement('div');
+    empty.className = 'parking-empty';
+    empty.textContent = 'Empty. Drag any stop down here to park it.';
+    parkingList.appendChild(empty);
+  } else {
+    state.days.parked.forEach((id, i) => {
+      const def = DEFS_BY_ID[id];
+      if (!def) return;
+      const t = state.times[def.id] || def.defaultT;
+      const el = document.createElement('div');
+      el.className = 'stop parked';
+      el.draggable = true;
+      el.dataset.id = def.id;
+      el.dataset.day = 'parked';
+      el.setAttribute('tabindex','0');
+      el.setAttribute('role','button');
+      el.setAttribute('aria-label', `${def.n}, parked (unscheduled). Drag back to a day to schedule it. Time saved as ${t}.`);
+      el.setAttribute('aria-grabbed','false');
+
+      const handle = document.createElement('span');
+      handle.className = 'drag-handle';
+      handle.setAttribute('aria-hidden','true');
+      handle.textContent = '⋮⋮';
+
+      const timeCell = document.createElement('div');
+      timeCell.className = 'stop-time';
+      timeCell.textContent = t;
+      timeCell.title = 'Click to edit time';
+      timeCell.setAttribute('role','textbox');
+      timeCell.setAttribute('aria-label', `Time for ${def.n}, currently ${t}. Click to edit.`);
+
+      const details = document.createElement('div');
+      details.innerHTML = `
+        <div class="stop-name">${def.n}${def.must ? '<span class="must">Book ahead</span>' : ''}<span class="parked-badge">Parked</span></div>
+        <div class="stop-note">${def.note}</div>
+        <div class="stop-links">
+          <a href="${def.map}" target="_blank" rel="noopener">Maps ↗</a>
+          ${def.site ? `<a href="${def.site}" target="_blank" rel="noopener">Website ↗</a>` : ''}
+        </div>`;
+
+      el.appendChild(handle);
+      el.appendChild(timeCell);
+      el.appendChild(details);
+      parkingList.appendChild(el);
+
+      wireStopEvents(el, def, 'parked', timeCell);
+    });
+  }
+
   // 3) Hotel marker — stable across renders
   if (!hotelMarker) {
     hotelMarker = L.marker(HOTEL, {icon: hotelIcon, zIndexOffset:-100})
@@ -522,7 +616,7 @@ function render(){
       .bindPopup('<strong>Home base</strong><br>Courtyard by Marriott Edinburgh<br>1–3 Baxter&rsquo;s Place, EH1 3AF<br><a href="https://maps.google.com/?q=Courtyard+by+Marriott+Edinburgh+Baxter%27s+Place" target="_blank" rel="noopener">Open in Google Maps</a>');
   }
 
-  // 4) Fit map to all visible pins
+  // 4) Fit map to all visible pins (parked items excluded — no markers)
   const all = [...stopMarkers.map(sm => sm.marker), hotelMarker];
   map.fitBounds(L.featureGroup(all).getBounds().pad(0.12));
 }
@@ -627,7 +721,7 @@ function wireStopEvents(el, def, day, timeCell){
   });
 }
 
-// Also allow dropping at the end of either list (empty space below the last stop)
+// Also allow dropping at the end of any list (empty space below the last stop)
 function wireListContainer(listId, day){
   const list = document.getElementById(listId);
   list.addEventListener('dragover', (e) => {
@@ -648,8 +742,8 @@ function wireListContainer(listId, day){
 function moveStop(id, targetDay, beforeId){
   const def = DEFS_BY_ID[id];
   if (!def) return;
-  // Remove from both days (id can only be in one)
-  [1, 2].forEach(d => {
+  // Remove from all three lists (id can only be in one)
+  [1, 2, 'parked'].forEach(d => {
     state.days[d] = state.days[d].filter(x => x !== id);
   });
   if (!beforeId) {
@@ -680,6 +774,7 @@ document.querySelectorAll('.reset-times').forEach(btn => {
 state = loadState();
 wireListContainer('day1-list', 1);
 wireListContainer('day2-list', 2);
+wireListContainer('parking-list', 'parked');
 render();
 </script>
 </body>
