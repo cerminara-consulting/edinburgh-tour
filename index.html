@@ -170,6 +170,9 @@
     padding:8px 10px;
     border-radius:2px;
   }
+  /* Time field is short (HH:MM AM). Cap its width so it doesn't stretch
+     across the full modal like the other inputs. */
+  .modal input[type=time]{max-width:160px}
   .modal input:focus-visible,
   .modal textarea:focus-visible{
     outline:2px solid var(--heather);outline-offset:0;border-color:var(--heather);
