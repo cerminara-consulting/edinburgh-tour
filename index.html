@@ -124,6 +124,26 @@
     user-select:none;
     pointer-events:none;
   }
+  .stop .stop-x{
+    position:absolute;
+    top:8px;right:8px;
+    width:22px;height:22px;
+    background:none;border:none;
+    color:var(--rule);
+    font-family:"IBM Plex Mono",monospace;font-size:16px;line-height:1;
+    cursor:pointer;
+    padding:0;
+    border-radius:2px;
+    transition:color .12s, background-color .12s;
+  }
+  .stop .stop-x:hover{
+    color:var(--paper);
+    background:var(--ink);
+  }
+  .stop .stop-x:focus-visible{
+    outline:2px solid var(--heather);
+    outline-offset:2px;
+  }
   .stop.parked{opacity:.65}
   .stop.parked:hover{opacity:1}
   .stop.parked .stop-time{cursor:text}
@@ -520,7 +540,7 @@ function render(){
       el.dataset.day = day;
       el.setAttribute('tabindex','0');
       el.setAttribute('role','button');
-      el.setAttribute('aria-label', `${def.n}, ${t}. Drag to reorder or click to view on map.`);
+      el.setAttribute('aria-label', `${def.n}, ${t}. Drag to reorder, click to view on map, or use the X to move it to the parking lot.`);
       el.setAttribute('aria-grabbed','false');
 
       const handle = document.createElement('span');
@@ -544,12 +564,20 @@ function render(){
           ${def.site ? `<a href="${def.site}" target="_blank" rel="noopener">Website ↗</a>` : ''}
         </div>`;
 
+      const x = document.createElement('button');
+      x.className = 'stop-x';
+      x.type = 'button';
+      x.textContent = '×';
+      x.title = `Move ${def.n} to the parking lot`;
+      x.setAttribute('aria-label', `Move ${def.n} to the parking lot`);
+
       el.appendChild(handle);
+      el.appendChild(x);
       el.appendChild(timeCell);
       el.appendChild(details);
       list.appendChild(el);
 
-      wireStopEvents(el, def, day, timeCell);
+      wireStopEvents(el, def, day, timeCell, x);
     });
 
     // Polyline for this day (drawn in current time-sorted order)
@@ -621,10 +649,10 @@ function render(){
   map.fitBounds(L.featureGroup(all).getBounds().pad(0.12));
 }
 
-function wireStopEvents(el, def, day, timeCell){
+function wireStopEvents(el, def, day, timeCell, xBtn){
   /* ---- Click to fly to on map ---- */
   const go = (e) => {
-    if (e.target.closest('a,input')) return;
+    if (e.target.closest('a,input,button')) return;
     if (e.target.classList && e.target.classList.contains('stop-time')) return;
     const sm = stopMarkers.find(x => x.id === def.id);
     if (!sm) return;
@@ -635,9 +663,20 @@ function wireStopEvents(el, def, day, timeCell){
   };
   el.addEventListener('click', go);
   el.addEventListener('keydown', (e) => {
-    if (e.target.closest('input')) return;
+    if (e.target.closest('input,button')) return;
     if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); go(e); }
   });
+
+  /* ---- X button: move to parking lot ---- */
+  if (xBtn) {
+    xBtn.addEventListener('click', (e) => {
+      e.preventDefault();
+      e.stopPropagation();
+      const ok = confirm(`Move "${def.n}" to the parking lot?`);
+      if (!ok) return;
+      moveStop(def.id, 'parked', null);
+    });
+  }
 
   /* ---- Click to edit time ---- */
   const enterEdit = (e) => {
