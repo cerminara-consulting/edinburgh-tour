@@ -57,6 +57,59 @@
   .lede{max-width:56ch;color:var(--ink-soft)}
   @media (max-width:820px){.lede{max-width:none}}
 
+  /* ---------- share ---------- */
+  .share-row{
+    margin-top:18px;
+    display:flex;
+    align-items:center;
+    flex-wrap:wrap;
+    gap:12px;
+  }
+  .share-btn{
+    font-family:"IBM Plex Mono",monospace;
+    font-size:12px;letter-spacing:.08em;text-transform:uppercase;
+    background:var(--paper);
+    color:var(--ink);
+    border:1px solid var(--ink);
+    padding:9px 14px 8px;
+    cursor:pointer;
+    border-radius:2px;
+    transition:background .12s ease;
+  }
+  .share-btn:hover{background:var(--stone-deep)}
+  .share-btn.copied{background:var(--heather);color:var(--paper);border-color:var(--heather)}
+  .share-hint{
+    font-family:"IBM Plex Mono",monospace;
+    font-size:11px;letter-spacing:.06em;
+    color:var(--ink-soft);
+  }
+  .shared-banner{
+    background:var(--paper);
+    border:1px dashed var(--heather);
+    border-left:3px solid var(--heather);
+    padding:14px 18px;
+    margin-top:18px;
+    display:flex;
+    align-items:center;
+    flex-wrap:wrap;
+    gap:14px;
+    font-family:"IBM Plex Sans",sans-serif;
+    font-size:14px;
+    color:var(--ink);
+  }
+  /* HTML hidden attr must beat our display:flex above */
+  .shared-banner[hidden]{display:none}
+  .shared-banner .icon{font-family:"IBM Plex Mono",monospace;font-size:16px;color:var(--heather)}
+  .shared-banner .start-over{
+    font-family:"IBM Plex Mono",monospace;
+    font-size:11px;letter-spacing:.08em;text-transform:uppercase;
+    background:transparent;color:var(--ink);
+    border:1px solid var(--ink);
+    padding:6px 12px;cursor:pointer;border-radius:2px;
+    margin-left:auto;
+  }
+  .shared-banner .start-over:hover{background:var(--ink);color:var(--paper)}
+
   /* ---------- map ---------- */
   #map{
     height:min(31vh,260px);
@@ -279,6 +332,15 @@
     <div class="eyebrow">Edinburgh &middot; Two days on foot &middot; ~4–5 mi per day</div>
     <h1>Edinburgh <em>in two walks</em></h1>
     <p class="lede">Two loops that follow the city's actual geography: Old Town top-to-bottom on day one (afternoon, golden-hour finish at The Vennel), then Dean Village, Stockbridge and a west-facing castle sunset from the Johnnie Walker rooftop on day two. Click any time to edit it, or drag stops between days to build your own route — the map redraws as you go.</p>
+    <div class="share-row">
+      <button id="share-btn" class="share-btn" type="button" title="Copy a link that loads your current itinerary on any device">Copy share link</button>
+      <span class="share-hint">Saves your edits into the URL — paste it to share or bookmark this exact itinerary.</span>
+    </div>
+    <div id="shared-banner" class="shared-banner" hidden>
+      <span class="icon">↗</span>
+      <span>Loaded a shared itinerary. Your edits will replace it.</span>
+      <button id="start-over" class="start-over" type="button">Start over</button>
+    </div>
   </div>
 </header>
 
@@ -416,6 +478,46 @@ const DEFS = [
 const DEFS_BY_ID = Object.fromEntries(DEFS.map(d => [d.id, d]));
 const STORAGE_KEY = 'edinburgh-state-v2';
 
+/* ---------- URL-SAFE BASE64 (for #trip=... hash) ---------- */
+// Encode JSON state into a URL-safe base64 string (no +, /, no = padding)
+function b64UrlEncode(str){
+  // btoa() takes a binary string; use UTF-8 escape trick
+  const b64 = btoa(unescape(encodeURIComponent(str)));
+  return b64.replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/g, '');
+}
+function b64UrlDecode(b64url){
+  let b64 = b64url.replace(/-/g, '+').replace(/_/g, '/');
+  // re-pad to a multiple of 4
+  while (b64.length % 4) b64 += '=';
+  return decodeURIComponent(escape(atob(b64)));
+}
+
+/* ---------- HASH <-> STATE ---------- */
+let tripLoadedFromHash = false; // set true if state came from #trip=...
+function getTripFromHash(){
+  const m = location.hash.match(/^#trip=(.+)$/);
+  if (!m) return null;
+  try {
+    const json = b64UrlDecode(m[1]);
+    const parsed = JSON.parse(json);
+    if (!parsed || !parsed.days || !parsed.times) return null;
+    return parsed;
+  } catch(_) { return null; }
+}
+function setTripInHash(stateObj){
+  try {
+    const json = JSON.stringify(stateObj);
+    const enc = b64UrlEncode(json);
+    // replaceState so each edit doesn't add a history entry
+    history.replaceState(null, '', '#trip=' + enc);
+  } catch(_) {}
+}
+function clearTripHash(){
+  try {
+    history.replaceState(null, '', location.pathname + location.search);
+  } catch(_) {}
+}
+
 function defaultState(){
   return {
     days: { 1: DEFS.filter(d => d.defaultDay===1).map(d => d.id),
@@ -425,28 +527,49 @@ function defaultState(){
   };
 }
 function loadState(){
+  // 1) Highest priority: a #trip=... hash (a shared link). If present and valid, use it.
+  tripLoadedFromHash = false;
+  const fromHash = getTripFromHash();
+  if (fromHash) {
+    const migrated = migrateLoaded(fromHash);
+    if (migrated) {
+      tripLoadedFromHash = true;
+      return migrated;
+    }
+  }
+  // 2) Otherwise, try localStorage
   try {
     const raw = localStorage.getItem(STORAGE_KEY);
     if (!raw) return defaultState();
     const parsed = JSON.parse(raw);
     if (!parsed || !parsed.days || !parsed.times) return defaultState();
-    // Defensive: filter out any ids that aren't in DEFS
-    const validIds = new Set(DEFS.map(d => d.id));
-    parsed.days[1] = (parsed.days[1] || []).filter(id => validIds.has(id));
-    parsed.days[2] = (parsed.days[2] || []).filter(id => validIds.has(id));
-    parsed.days.parked = (parsed.days.parked || []).filter(id => validIds.has(id));
-    // Re-add any DEFS that got dropped from ALL three lists (e.g. corrupt localStorage)
-    // — but only if the id is missing everywhere, never override a user move.
-    DEFS.forEach(d => {
-      const anywhere = parsed.days[1].includes(d.id) || parsed.days[2].includes(d.id) || parsed.days.parked.includes(d.id);
-      if (!anywhere) parsed.days[d.defaultDay].push(d.id);
-    });
-    Object.keys(parsed.times).forEach(id => { if (!validIds.has(id)) delete parsed.times[id]; });
-    return parsed;
+    return migrateLoaded(parsed) || defaultState();
   } catch(_) { return defaultState(); }
+}
+
+// Filter and repair any loaded state (hash OR localStorage) so it always has
+// valid ids, well-formed arrays, and a re-added default for any def missing
+// from ALL three lists. Returns the migrated state, or null if irreparable.
+function migrateLoaded(parsed){
+  if (!parsed || !parsed.days || !parsed.times) return null;
+  const validIds = new Set(DEFS.map(d => d.id));
+  parsed.days[1] = (parsed.days[1] || []).filter(id => validIds.has(id));
+  parsed.days[2] = (parsed.days[2] || []).filter(id => validIds.has(id));
+  parsed.days.parked = (parsed.days.parked || []).filter(id => validIds.has(id));
+  let added = false;
+  DEFS.forEach(d => {
+    const anywhere = parsed.days[1].includes(d.id) || parsed.days[2].includes(d.id) || parsed.days.parked.includes(d.id);
+    if (!anywhere) { parsed.days[d.defaultDay].push(d.id); added = true; }
+  });
+  Object.keys(parsed.times).forEach(id => { if (!validIds.has(id)) delete parsed.times[id]; });
+  return parsed;
 }
 function saveState(){
   try { localStorage.setItem(STORAGE_KEY, JSON.stringify(state)); } catch(_) {}
+  // Keep the URL hash in sync so the share-link button always copies the
+  // current state, and so reloading the page (or pasting the URL elsewhere)
+  // gives the recipient this exact itinerary.
+  setTripInHash(state);
 }
 
 /* ---------- TIME PARSING ---------- */
@@ -814,6 +937,75 @@ state = loadState();
 wireListContainer('day1-list', 1);
 wireListContainer('day2-list', 2);
 wireListContainer('parking-list', 'parked');
+
+// Show "Loaded a shared itinerary" banner if we loaded from a #trip=... hash
+const banner = document.getElementById('shared-banner');
+if (tripLoadedFromHash) {
+  banner.hidden = false;
+  document.getElementById('start-over').addEventListener('click', (e) => {
+    e.preventDefault();
+    clearTripHash();
+    try { localStorage.removeItem(STORAGE_KEY); } catch(_) {}
+    state = defaultState();
+    saveState(); // also rewrites hash with default state — fine
+    clearTripHash(); // immediately clear again so banner stays hidden
+    banner.hidden = true;
+    render();
+  });
+} else {
+  banner.hidden = true;
+}
+
+// Share button — copies the current URL (already includes #trip=... since
+// every saveState() updates the hash) to the clipboard.
+const shareBtn = document.getElementById('share-btn');
+let shareResetTimer = null;
+shareBtn.addEventListener('click', async (e) => {
+  e.preventDefault();
+  // Make sure the hash reflects the freshest state before copying
+  setTripInHash(state);
+  const url = location.href;
+  let copied = false;
+  try {
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      // Race the clipboard write against a 500ms timeout — if the API hangs
+      // (permissions denied, sandboxed iframes, file:// origins) we still
+      // surface the fallback so the button gives some feedback.
+      await Promise.race([
+        navigator.clipboard.writeText(url).then(() => { copied = true; }),
+        new Promise(resolve => setTimeout(resolve, 500))
+      ]);
+    }
+  } catch(_) {}
+  if (!copied) {
+    // Fallback: hidden textarea + execCommand for older browsers / non-https
+    const ta = document.createElement('textarea');
+    ta.value = url;
+    ta.style.position = 'fixed';
+    ta.style.top = '-1000px';
+    ta.style.opacity = '0';
+    document.body.appendChild(ta);
+    ta.focus();
+    ta.select();
+    try { copied = document.execCommand('copy'); } catch(_) {}
+    document.body.removeChild(ta);
+  }
+  if (copied) {
+    shareBtn.classList.add('copied');
+    shareBtn.textContent = '✓ Copied';
+    if (shareResetTimer) clearTimeout(shareResetTimer);
+    shareResetTimer = setTimeout(() => {
+      shareBtn.classList.remove('copied');
+      shareBtn.textContent = 'Copy share link';
+    }, 2000);
+  } else {
+    // Final fallback: select the URL via window.prompt so the user can copy manually.
+    // This always works because it doesn't depend on clipboard permissions.
+    window.prompt('Copy this share link (Cmd/Ctrl+C, then Enter):', url);
+    shareBtn.textContent = 'Copy share link';
+  }
+});
+
 render();
 </script>
 </body>
