@@ -83,6 +83,19 @@
     font-size:11px;letter-spacing:.06em;
     color:var(--ink-soft);
   }
+  .add-btn{
+    font-family:"IBM Plex Mono",monospace;
+    font-size:12px;letter-spacing:.08em;text-transform:uppercase;
+    background:var(--ink);color:var(--paper);
+    border:1px solid var(--ink);
+    padding:9px 14px 8px;
+    cursor:pointer;
+    border-radius:2px;
+    margin-left:auto;
+    transition:background .12s ease;
+  }
+  .add-btn:hover{background:var(--heather);border-color:var(--heather)}
+  .share-row .share-btn{margin-left:0}
   .shared-banner{
     background:var(--paper);
     border:1px dashed var(--heather);
@@ -109,6 +122,126 @@
     margin-left:auto;
   }
   .shared-banner .start-over:hover{background:var(--ink);color:var(--paper)}
+
+  /* ---------- add-activity modal ---------- */
+  .modal-backdrop{
+    position:fixed;inset:0;
+    background:rgba(33,30,26,.45);
+    display:flex;align-items:center;justify-content:center;
+    z-index:1000;
+    padding:20px;
+  }
+  .modal-backdrop[hidden]{display:none}
+  .modal{
+    background:var(--paper);
+    border:1px solid var(--ink);
+    width:100%;max-width:520px;
+    max-height:calc(100vh - 40px);
+    overflow-y:auto;
+    padding:28px 28px 22px;
+    box-shadow:0 12px 40px rgba(0,0,0,.18);
+  }
+  .modal h3{
+    font-family:"Fraunces",serif;
+    font-weight:600;font-size:1.4rem;
+    margin-bottom:6px;color:var(--ink);
+  }
+  .modal .modal-sub{
+    font-size:13px;color:var(--ink-soft);
+    margin-bottom:18px;
+  }
+  .modal label{
+    display:block;
+    font-family:"IBM Plex Mono",monospace;
+    font-size:11px;letter-spacing:.08em;text-transform:uppercase;
+    color:var(--ink-soft);
+    margin-top:14px;margin-bottom:4px;
+  }
+  .modal input[type=text],
+  .modal input[type=url],
+  .modal input[type=time],
+  .modal textarea{
+    width:100%;
+    font-family:"IBM Plex Sans",sans-serif;
+    font-size:14px;
+    color:var(--ink);
+    background:var(--stone);
+    border:1px solid var(--rule);
+    padding:8px 10px;
+    border-radius:2px;
+  }
+  .modal input:focus-visible,
+  .modal textarea:focus-visible{
+    outline:2px solid var(--heather);outline-offset:0;border-color:var(--heather);
+  }
+  .modal textarea{
+    resize:vertical;min-height:60px;line-height:1.45;
+    font-family:"IBM Plex Sans",sans-serif;
+  }
+  .modal .day-picker{
+    display:flex;flex-wrap:wrap;gap:8px;
+    margin-top:4px;
+  }
+  .modal .day-picker label{
+    flex:1 1 auto;
+    margin:0;padding:7px 10px;
+    border:1px solid var(--rule);
+    background:var(--stone);
+    text-align:center;
+    cursor:pointer;
+    font-family:"IBM Plex Mono",monospace;
+    font-size:11px;letter-spacing:.08em;text-transform:uppercase;
+    color:var(--ink-soft);
+  }
+  .modal .day-picker input[type=radio]{display:none}
+  .modal .day-picker input[type=radio]:checked + label{
+    background:var(--ink);color:var(--paper);border-color:var(--ink);
+  }
+  .modal .must-row{
+    display:flex;align-items:center;gap:8px;
+    margin-top:14px;
+    font-family:"IBM Plex Sans",sans-serif;
+    font-size:14px;color:var(--ink);
+  }
+  .modal .must-row input[type=checkbox]{
+    width:16px;height:16px;accent-color:var(--heather);
+  }
+  .modal .error{
+    color:#a23d2c;
+    font-family:"IBM Plex Mono",monospace;
+    font-size:11px;letter-spacing:.04em;
+    margin-top:4px;
+    min-height:14px;
+  }
+  .modal .actions{
+    display:flex;justify-content:flex-end;gap:10px;
+    margin-top:22px;
+  }
+  .modal .actions button{
+    font-family:"IBM Plex Mono",monospace;
+    font-size:12px;letter-spacing:.08em;text-transform:uppercase;
+    padding:9px 16px 8px;
+    border-radius:2px;cursor:pointer;
+  }
+  .modal .cancel-btn{
+    background:transparent;color:var(--ink);
+    border:1px solid var(--ink);
+  }
+  .modal .cancel-btn:hover{background:var(--stone-deep)}
+  .modal .add-confirm-btn{
+    background:var(--ink);color:var(--paper);border:1px solid var(--ink);
+  }
+  .modal .add-confirm-btn:hover{background:var(--heather);border-color:var(--heather)}
+  /* Tiny "you added" badge that appears inline next to user-created stops */
+  .user-badge{
+    font-family:"IBM Plex Mono",monospace;
+    font-size:9px;letter-spacing:.12em;text-transform:uppercase;
+    color:var(--ink-soft);
+    border:1px solid var(--rule);
+    padding:1px 6px;
+    margin-left:6px;
+    vertical-align:middle;
+  }
 
   /* ---------- map ---------- */
   #map{
@@ -335,6 +468,7 @@
     <div class="share-row">
       <button id="share-btn" class="share-btn" type="button" title="Copy a link that loads your current itinerary on any device">Copy share link</button>
       <span class="share-hint">Saves your edits into the URL — paste it to share or bookmark this exact itinerary.</span>
+      <button id="add-btn" class="add-btn" type="button" title="Add a custom stop to your itinerary">+ Add activity</button>
     </div>
     <div id="shared-banner" class="shared-banner" hidden>
       <span class="icon">↗</span>
@@ -430,6 +564,51 @@
 </footer>
 
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
+
+<!-- Add-activity modal -->
+<div id="add-modal" class="modal-backdrop" hidden role="dialog" aria-modal="true" aria-labelledby="add-modal-h">
+  <form id="add-form" class="modal" autocomplete="off">
+    <h3 id="add-modal-h">Add an activity</h3>
+    <p class="modal-sub">It lands in the day or parking lot you pick, sortable by time. Map pin and route line require coordinates, so custom stops show in the list only.</p>
+
+    <label for="add-name">Name</label>
+    <input id="add-name" name="name" type="text" required maxlength="120" placeholder="e.g. Coffee at Brew Lab">
+
+    <label for="add-note">Description</label>
+    <textarea id="add-note" name="note" maxlength="600" placeholder="Optional. Two sentences is plenty."></textarea>
+
+    <label for="add-time">Time</label>
+    <input id="add-time" name="time" type="time">
+
+    <label>Day</label>
+    <div class="day-picker" role="radiogroup" aria-label="Which day">
+      <input type="radio" id="add-day-1" name="day" value="1" checked>
+      <label for="add-day-1">Day 1</label>
+      <input type="radio" id="add-day-2" name="day" value="2">
+      <label for="add-day-2">Day 2</label>
+      <input type="radio" id="add-day-parked" name="day" value="parked">
+      <label for="add-day-parked">Parking lot</label>
+    </div>
+
+    <label for="add-map">Maps link</label>
+    <input id="add-map" name="map" type="url" placeholder="https://maps.google.com/...">
+
+    <label for="add-site">Website link</label>
+    <input id="add-site" name="site" type="url" placeholder="https://...">
+
+    <div class="must-row">
+      <input id="add-must" name="must" type="checkbox">
+      <label for="add-must" style="margin:0;font-family:inherit;font-size:inherit;letter-spacing:0;text-transform:none;color:inherit">Book ahead — needs a reservation</label>
+    </div>
+
+    <div id="add-error" class="error" aria-live="polite"></div>
+
+    <div class="actions">
+      <button type="button" class="cancel-btn" id="add-cancel">Cancel</button>
+      <button type="submit" class="add-confirm-btn">Add to itinerary</button>
+    </div>
+  </form>
+</div>
 <script>
 /* ---------- DATA ---------- */
 // Each stop has a stable id, default day, and default time. User edits
@@ -476,7 +655,7 @@ const DEFS = [
    map:"https://maps.google.com/?cid=569368434008832867", site:"https://www.johnniewalker.com/en-gb/visit-us-princes-street/"}
 ];
 const DEFS_BY_ID = Object.fromEntries(DEFS.map(d => [d.id, d]));
-const STORAGE_KEY = 'edinburgh-state-v2';
+const STORAGE_KEY = 'edinburgh-state-v3';
 
 /* ---------- URL-SAFE BASE64 (for #trip=... hash) ---------- */
 // Encode JSON state into a URL-safe base64 string (no +, /, no = padding)
@@ -523,7 +702,8 @@ function defaultState(){
     days: { 1: DEFS.filter(d => d.defaultDay===1).map(d => d.id),
             2: DEFS.filter(d => d.defaultDay===2).map(d => d.id),
             parked: [] },
-    times: {}
+    times: {},
+    userStops: {} // id -> {id, n, note, defaultDay, defaultT, map, site, must}
   };
 }
 function loadState(){
@@ -552,17 +732,31 @@ function loadState(){
 // from ALL three lists. Returns the migrated state, or null if irreparable.
 function migrateLoaded(parsed){
   if (!parsed || !parsed.days || !parsed.times) return null;
-  const validIds = new Set(DEFS.map(d => d.id));
-  parsed.days[1] = (parsed.days[1] || []).filter(id => validIds.has(id));
-  parsed.days[2] = (parsed.days[2] || []).filter(id => validIds.has(id));
-  parsed.days.parked = (parsed.days.parked || []).filter(id => validIds.has(id));
-  let added = false;
+  // Make sure userStops is at least an object (v2 state had no user stops)
+  if (!parsed.userStops || typeof parsed.userStops !== 'object') parsed.userStops = {};
+  // Collect every user-stop id that survives — used to filter the day lists.
+  const userIds = Object.keys(parsed.userStops);
+  const isValid = id => DEFS_BY_ID[id] || userIds.includes(id);
+  parsed.days[1] = (parsed.days[1] || []).filter(isValid);
+  parsed.days[2] = (parsed.days[2] || []).filter(isValid);
+  parsed.days.parked = (parsed.days.parked || []).filter(isValid);
   DEFS.forEach(d => {
     const anywhere = parsed.days[1].includes(d.id) || parsed.days[2].includes(d.id) || parsed.days.parked.includes(d.id);
-    if (!anywhere) { parsed.days[d.defaultDay].push(d.id); added = true; }
+    if (!anywhere) parsed.days[d.defaultDay].push(d.id);
   });
-  Object.keys(parsed.times).forEach(id => { if (!validIds.has(id)) delete parsed.times[id]; });
+  // Drop any user-stop defs not referenced by any day list (orphaned by corrupt state)
+  Object.keys(parsed.userStops).forEach(uid => {
+    const anywhere = parsed.days[1].includes(uid) || parsed.days[2].includes(uid) || parsed.days.parked.includes(uid);
+    if (!anywhere) delete parsed.userStops[uid];
+  });
+  // Filter times map to keep only valid ids
+  Object.keys(parsed.times).forEach(id => { if (!isValid(id)) delete parsed.times[id]; });
   return parsed;
+}
+
+// Look up a stop's definition by id, falling through from factory DEFS to user-added stops
+function lookupDef(id){
+  return DEFS_BY_ID[id] || (state.userStops && state.userStops[id]) || null;
 }
 function saveState(){
   try { localStorage.setItem(STORAGE_KEY, JSON.stringify(state)); } catch(_) {}
@@ -640,7 +834,8 @@ function render(){
   // 2) Sort each day by time ascending, then build DOM + markers in that order
   [1, 2].forEach(day => {
     const ordered = state.days[day]
-      .map(id => DEFS_BY_ID[id])
+      .map(id => lookupDef(id))
+      .filter(Boolean)
       .sort((a, b) => parseTimeToMins(state.times[a.id] || a.defaultT) - parseTimeToMins(state.times[b.id] || b.defaultT));
 
     const list = document.getElementById(day === 1 ? 'day1-list' : 'day2-list');
@@ -648,12 +843,16 @@ function render(){
     const color = day === 1 ? '#5d5187' : '#9a6b1f';
 
     const latlngs = [];
+    let nextMarker = 0;
     ordered.forEach((def, i) => {
       const t = state.times[def.id] || def.defaultT;
-      latlngs.push([def.lat, def.lng]);
-
-      // Map marker
-      addStopMarker(def, i + 1, color);
+      const isUserStop = !DEFS_BY_ID[def.id];
+      // Only factory stops have lat/lng, so only those get a map pin + route line.
+      if (!isUserStop && typeof def.lat === 'number' && typeof def.lng === 'number') {
+        nextMarker++;
+        latlngs.push([def.lat, def.lng]);
+        addStopMarker(def, nextMarker, color);
+      }
 
       // DOM row
       const el = document.createElement('div');
@@ -678,13 +877,19 @@ function render(){
       timeCell.setAttribute('role','textbox');
       timeCell.setAttribute('aria-label', `Time for ${def.n}, currently ${t}. Click to edit.`);
 
+      // User-added stops get a tiny "you added" badge so it's clear they're custom.
+      const userBadge = isUserStop ? '<span class="user-badge">you added</span>' : '';
+      const safeName = String(def.n || '').replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+      const safeNote = String(def.note || '').replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+      const safeMap = def.map ? String(def.map).replace(/"/g, '&quot;') : '';
+      const safeSite = def.site ? String(def.site).replace(/"/g, '&quot;') : '';
       const details = document.createElement('div');
       details.innerHTML = `
-        <div class="stop-name">${i+1}. ${def.n}${def.must ? '<span class="must">Book ahead</span>' : ''}</div>
-        <div class="stop-note">${def.note}</div>
+        <div class="stop-name">${i+1}. ${safeName}${userBadge}${def.must ? '<span class="must">Book ahead</span>' : ''}</div>
+        <div class="stop-note">${safeNote}</div>
         <div class="stop-links">
-          <a href="${def.map}" target="_blank" rel="noopener">Maps ↗</a>
-          ${def.site ? `<a href="${def.site}" target="_blank" rel="noopener">Website ↗</a>` : ''}
+          ${safeMap ? `<a href="${safeMap}" target="_blank" rel="noopener">Maps ↗</a>` : ''}
+          ${safeSite ? `<a href="${safeSite}" target="_blank" rel="noopener">Website ↗</a>` : ''}
         </div>`;
 
       const x = document.createElement('button');
@@ -703,7 +908,7 @@ function render(){
       wireStopEvents(el, def, day, timeCell, x);
     });
 
-    // Polyline for this day (drawn in current time-sorted order)
+    // Polyline for this day (only over factory stops with lat/lng — user stops excluded)
     if (latlngs.length) addPolyline(latlngs, color);
   });
 
@@ -713,13 +918,14 @@ function render(){
   if (!state.days.parked.length) {
     const empty = document.createElement('div');
     empty.className = 'parking-empty';
-    empty.textContent = 'Empty. Drag any stop down here to park it.';
+    empty.textContent = 'Empty. Drag any stop down here to park it — or use + Add activity above.';
     parkingList.appendChild(empty);
   } else {
     state.days.parked.forEach((id, i) => {
-      const def = DEFS_BY_ID[id];
+      const def = lookupDef(id);
       if (!def) return;
       const t = state.times[def.id] || def.defaultT;
+      const isUserStop = !DEFS_BY_ID[def.id];
       const el = document.createElement('div');
       el.className = 'stop parked';
       el.draggable = true;
@@ -742,13 +948,18 @@ function render(){
       timeCell.setAttribute('role','textbox');
       timeCell.setAttribute('aria-label', `Time for ${def.n}, currently ${t}. Click to edit.`);
 
+      const userBadge = isUserStop ? '<span class="user-badge">you added</span>' : '';
+      const safeName = String(def.n || '').replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+      const safeNote = String(def.note || '').replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+      const safeMap = def.map ? String(def.map).replace(/"/g, '&quot;') : '';
+      const safeSite = def.site ? String(def.site).replace(/"/g, '&quot;') : '';
       const details = document.createElement('div');
       details.innerHTML = `
-        <div class="stop-name">${def.n}${def.must ? '<span class="must">Book ahead</span>' : ''}<span class="parked-badge">Parked</span></div>
-        <div class="stop-note">${def.note}</div>
+        <div class="stop-name">${safeName}${userBadge}${def.must ? '<span class="must">Book ahead</span>' : ''}<span class="parked-badge">Parked</span></div>
+        <div class="stop-note">${safeNote}</div>
         <div class="stop-links">
-          <a href="${def.map}" target="_blank" rel="noopener">Maps ↗</a>
-          ${def.site ? `<a href="${def.site}" target="_blank" rel="noopener">Website ↗</a>` : ''}
+          ${safeMap ? `<a href="${safeMap}" target="_blank" rel="noopener">Maps ↗</a>` : ''}
+          ${safeSite ? `<a href="${safeSite}" target="_blank" rel="noopener">Website ↗</a>` : ''}
         </div>`;
 
       el.appendChild(handle);
@@ -902,7 +1113,7 @@ function wireListContainer(listId, day){
 }
 
 function moveStop(id, targetDay, beforeId){
-  const def = DEFS_BY_ID[id];
+  const def = lookupDef(id);
   if (!def) return;
   // Remove from all three lists (id can only be in one)
   [1, 2, 'parked'].forEach(d => {
@@ -944,6 +1155,13 @@ if (tripLoadedFromHash) {
   banner.hidden = false;
   document.getElementById('start-over').addEventListener('click', (e) => {
     e.preventDefault();
+    const ok = window.confirm(
+      "Start over from the default itinerary?\n\n" +
+      "This will clear ALL your changes — reordered stops, time edits, " +
+      "parked items, any activities you added, and the shared link.\n\n" +
+      "This can't be undone."
+    );
+    if (!ok) return;
     clearTripHash();
     try { localStorage.removeItem(STORAGE_KEY); } catch(_) {}
     state = defaultState();
@@ -1004,6 +1222,129 @@ shareBtn.addEventListener('click', async (e) => {
     window.prompt('Copy this share link (Cmd/Ctrl+C, then Enter):', url);
     shareBtn.textContent = 'Copy share link';
   }
+});
+
+/* ---------- ADD USER STOP ---------- */
+// Mint a fresh user-stop id (u1, u2, ...) by scanning existing userStops.
+function nextUserStopId(){
+  let n = 1;
+  while (state.userStops['u' + n]) n++;
+  return 'u' + n;
+}
+
+function addUserStop({ n, note, t, day, map, site, must }){
+  const id = nextUserStopId();
+  // Defensive: trim & cap lengths to keep the share-link hash compact
+  const def = {
+    id,
+    n: String(n || '').trim().slice(0, 120),
+    note: String(note || '').trim().slice(0, 600),
+    defaultDay: (day === 1 || day === 2 || day === 'parked') ? day : 1,
+    defaultT: t || '12:00 PM',
+    map: String(map || '').trim() || '',
+    site: String(site || '').trim() || '',
+    must: !!must,
+  };
+  state.userStops[id] = def;
+  // Push into the chosen day/parking list. Time-sort happens in render().
+  if (!state.days[def.defaultDay].includes(id)) state.days[def.defaultDay].push(id);
+  // Allow per-instance time override if the user picked one
+  if (t) state.times[id] = def.defaultT;
+  saveState();
+  render();
+  return id;
+}
+
+/* ---------- ADD MODAL WIRING ---------- */
+const addModal = document.getElementById('add-modal');
+const addForm = document.getElementById('add-form');
+const addError = document.getElementById('add-error');
+const addName = document.getElementById('add-name');
+const addNote = document.getElementById('add-note');
+const addTime = document.getElementById('add-time');
+const addMap = document.getElementById('add-map');
+const addSite = document.getElementById('add-site');
+const addMust = document.getElementById('add-must');
+
+function openAddModal(){
+  // Reset fields and open
+  addForm.reset();
+  // Re-check Day 1 after reset (reset() clears radio state)
+  document.getElementById('add-day-1').checked = true;
+  addError.textContent = '';
+  addModal.hidden = false;
+  // Focus the name field after the modal paints
+  setTimeout(() => addName.focus(), 0);
+  document.body.style.overflow = 'hidden'; // prevent background scroll
+}
+function closeAddModal(){
+  addModal.hidden = true;
+  document.body.style.overflow = '';
+}
+
+document.getElementById('add-btn').addEventListener('click', (e) => {
+  e.preventDefault();
+  openAddModal();
+});
+
+// Cancel + click-outside + Esc all close the modal
+document.getElementById('add-cancel').addEventListener('click', (e) => {
+  e.preventDefault();
+  closeAddModal();
+});
+addModal.addEventListener('click', (e) => {
+  if (e.target === addModal) closeAddModal(); // backdrop click
+});
+document.addEventListener('keydown', (e) => {
+  if (e.key === 'Escape' && !addModal.hidden) closeAddModal();
+});
+
+addForm.addEventListener('submit', (e) => {
+  e.preventDefault();
+  addError.textContent = '';
+  const name = addName.value.trim();
+  if (!name) {
+    addError.textContent = 'Name is required.';
+    addName.focus();
+    return;
+  }
+  // Light URL validation: if user typed something but it's clearly not a URL, reject.
+  // Empty is OK (both Maps and Website are optional).
+  const mapVal = addMap.value.trim();
+  const siteVal = addSite.value.trim();
+  if (mapVal && !/^https?:\/\//i.test(mapVal)) {
+    addError.textContent = 'Maps link must start with http:// or https:// (or leave it blank).';
+    addMap.focus();
+    return;
+  }
+  if (siteVal && !/^https?:\/\//i.test(siteVal)) {
+    addError.textContent = 'Website link must start with http:// or https:// (or leave it blank).';
+    addSite.focus();
+    return;
+  }
+  // Time is optional — empty falls back to defaultT '12:00 PM'
+  let timeStr = '';
+  const tv = addTime.value;
+  if (tv) {
+    const [h2, m2] = tv.split(':').map(Number);
+    const ampm = h2 >= 12 ? 'PM' : 'AM';
+    let h12 = h2 % 12; if (h12 === 0) h12 = 12;
+    timeStr = `${h12}:${String(m2).padStart(2, '0')} ${ampm}`;
+  }
+  const dayRadio = addForm.querySelector('input[name="day"]:checked');
+  const day = dayRadio ? dayRadio.value : '1';
+  const targetDay = (day === 'parked') ? 'parked' : Number(day);
+
+  addUserStop({
+    n: name,
+    note: addNote.value.trim(),
+    t: timeStr,
+    day: targetDay,
+    map: mapVal,
+    site: siteVal,
+    must: addMust.checked,
+  });
+  closeAddModal();
 });
 
 render();
