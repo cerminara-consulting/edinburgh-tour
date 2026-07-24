@@ -385,6 +385,10 @@
   .stop-links{margin-top:6px;font-family:"IBM Plex Mono",monospace;font-size:.76rem}
   .stop-links a{margin-right:14px;text-decoration:none;border-bottom:1px solid var(--heather)}
   .stop-links a:hover{border-bottom-width:2px}
+  .booked-control{display:inline-flex;align-items:center;gap:6px;margin-top:9px;font-size:.78rem;color:var(--ink-soft);cursor:pointer}
+  .booked-control input{width:16px;height:16px;accent-color:var(--heather)}
+  .booked-badge{display:inline-block;margin-left:8px;font-family:"IBM Plex Mono",monospace;font-size:.66rem;letter-spacing:.1em;text-transform:uppercase;color:var(--paper);background:var(--heather);padding:2px 7px;border-radius:2px;vertical-align:2px}
+  .stop.is-booked{background:rgba(93,81,135,.06)}
   .must{
     display:inline-block;margin-left:8px;
     font-family:"IBM Plex Mono",monospace;font-size:.66rem;letter-spacing:.1em;text-transform:uppercase;
@@ -706,7 +710,8 @@ function defaultState(){
             2: DEFS.filter(d => d.defaultDay===2).map(d => d.id),
             parked: [] },
     times: {},
-    userStops: {} // id -> {id, n, note, defaultDay, defaultT, map, site, must}
+    userStops: {}, // id -> {id, n, note, defaultDay, defaultT, map, site, must}
+    booked: {}
   };
 }
 function loadState(){
@@ -737,6 +742,7 @@ function migrateLoaded(parsed){
   if (!parsed || !parsed.days || !parsed.times) return null;
   // Make sure userStops is at least an object (v2 state had no user stops)
   if (!parsed.userStops || typeof parsed.userStops !== 'object') parsed.userStops = {};
+  if (!parsed.booked || typeof parsed.booked !== 'object') parsed.booked = {};
   // Collect every user-stop id that survives — used to filter the day lists.
   const userIds = Object.keys(parsed.userStops);
   const isValid = id => DEFS_BY_ID[id] || userIds.includes(id);
@@ -754,6 +760,7 @@ function migrateLoaded(parsed){
   });
   // Filter times map to keep only valid ids
   Object.keys(parsed.times).forEach(id => { if (!isValid(id)) delete parsed.times[id]; });
+  parsed.booked = Object.fromEntries(Object.entries(parsed.booked).filter(([id, value]) => isValid(id) && value === true));
   return parsed;
 }
 
@@ -859,7 +866,7 @@ function render(){
 
       // DOM row
       const el = document.createElement('div');
-      el.className = 'stop';
+      el.className = 'stop' + (state.booked[def.id] ? ' is-booked' : '');
       el.draggable = true;
       el.dataset.id = def.id;
       el.dataset.day = day;
@@ -888,12 +895,13 @@ function render(){
       const safeSite = def.site ? String(def.site).replace(/"/g, '&quot;') : '';
       const details = document.createElement('div');
       details.innerHTML = `
-        <div class="stop-name">${i+1}. ${safeName}${userBadge}${def.must ? '<span class="must">Book ahead</span>' : ''}</div>
+        <div class="stop-name">${i+1}. ${safeName}${userBadge}${def.must ? '<span class="must">Book ahead</span>' : ''}${state.booked[def.id] ? '<span class="booked-badge">Booked ✓</span>' : ''}</div>
         <div class="stop-note">${safeNote}</div>
         <div class="stop-links">
           ${safeMap ? `<a href="${safeMap}" target="_blank" rel="noopener">Maps ↗</a>` : ''}
           ${safeSite ? `<a href="${safeSite}" target="_blank" rel="noopener">Website ↗</a>` : ''}
-        </div>`;
+        </div>
+        <label class="booked-control"><input type="checkbox" ${state.booked[def.id] ? 'checked' : ''} aria-label="Mark ${safeName} as booked" onchange="setStopBooked('${def.id}', this.checked)"> Booked</label>`;
 
       const x = document.createElement('button');
       x.className = 'stop-x';
@@ -930,7 +938,7 @@ function render(){
       const t = state.times[def.id] || def.defaultT;
       const isUserStop = !DEFS_BY_ID[def.id];
       const el = document.createElement('div');
-      el.className = 'stop parked';
+      el.className = 'stop parked' + (state.booked[def.id] ? ' is-booked' : '');
       el.draggable = true;
       el.dataset.id = def.id;
       el.dataset.day = 'parked';
@@ -958,12 +966,13 @@ function render(){
       const safeSite = def.site ? String(def.site).replace(/"/g, '&quot;') : '';
       const details = document.createElement('div');
       details.innerHTML = `
-        <div class="stop-name">${safeName}${userBadge}${def.must ? '<span class="must">Book ahead</span>' : ''}<span class="parked-badge">Parked</span></div>
+        <div class="stop-name">${safeName}${userBadge}${def.must ? '<span class="must">Book ahead</span>' : ''}${state.booked[def.id] ? '<span class="booked-badge">Booked ✓</span>' : ''}<span class="parked-badge">Parked</span></div>
         <div class="stop-note">${safeNote}</div>
         <div class="stop-links">
           ${safeMap ? `<a href="${safeMap}" target="_blank" rel="noopener">Maps ↗</a>` : ''}
           ${safeSite ? `<a href="${safeSite}" target="_blank" rel="noopener">Website ↗</a>` : ''}
-        </div>`;
+        </div>
+        <label class="booked-control"><input type="checkbox" ${state.booked[def.id] ? 'checked' : ''} aria-label="Mark ${safeName} as booked" onchange="setStopBooked('${def.id}', this.checked)"> Booked</label>`;
 
       el.appendChild(handle);
       el.appendChild(timeCell);
@@ -1129,6 +1138,13 @@ function moveStop(id, targetDay, beforeId){
     if (idx === -1) state.days[targetDay].push(id);
     else state.days[targetDay].splice(idx, 0, id);
   }
+  saveState();
+  render();
+}
+
+function setStopBooked(id, checked){
+  if (checked) state.booked[id] = true;
+  else delete state.booked[id];
   saveState();
   render();
 }
